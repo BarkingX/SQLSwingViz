@@ -138,13 +138,12 @@ public class Database implements IDatabase {
     }
 
     @Override
-    public void register(List<String> userInfo, List<String> shippingInfo) throws Exception {
+    public void register(List<String> userInfo) throws Exception {
         boolean autoCommit = root.getAutoCommit();
         try {
             root.setAutoCommit(false);
             executeUpdate(root, CREATE_USER, userInfo);
             executeUpdate(root, INSERT_USER_INFO, userInfo);
-            executeUpdate(root, INSERT_SHIPPING_INFO, shippingInfo);
             root.commit();
         }
         catch (SQLException e) {
@@ -162,16 +161,6 @@ public class Database implements IDatabase {
         stat.getUpdateCount();
     }
 
-    @Override
-    public void insertShippingInfo(List<String> shippingInfo) {
-        try {
-            executeUpdate(root, INSERT_SHIPPING_INFO, shippingInfo);
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     public void loadDataInfile(String path, String tableName) {
@@ -230,19 +219,6 @@ public class Database implements IDatabase {
             parameters.addAll(Arrays.asList(port, year));
         }
         return parameters;
-    }
-
-    public QueryModel selectShippingInfo() {
-        try (var stat = root.createStatement();
-             var rs = stat.executeQuery(SELECT_SHIPPING_INFO)) {
-            var crs = factory.createCachedRowSet();
-            crs.populate(rs);
-            return new QueryModel(crs);
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     @Override

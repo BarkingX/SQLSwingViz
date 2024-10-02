@@ -6,7 +6,6 @@ import ui.util.IconSupplier;
 import ui.util.Utils;
 import util.IconType;
 import util.Option;
-import util.Profile;
 import util.User;
 
 import javax.swing.*;
@@ -55,10 +54,6 @@ public class WelcomePanel extends DialogWrapper implements IconSupplier {
 
     public @NotNull User getSingUpUser() {
         return signUpPanel.getUser();
-    }
-
-    public @NotNull Profile getRegisteredProfile() {
-        return signUpPanel.getProfile();
     }
 
     private void showSignDialog(Option approveOption) {

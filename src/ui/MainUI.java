@@ -9,7 +9,6 @@ import util.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowListener;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -18,19 +17,15 @@ public class MainUI extends JFrame implements IconSupplier {
     private final static int DEFAULT_HEIGHT = 800;
     private final IDatabase db;
     private final WelcomePanel welcomePanel;
-    private final AccountInfoPanel accountPanel;
     private final DataImportPanel dataImportPanel;
     private final DataDisplayPanel dataDisplayPanel;
-    private final OrderPanel orderPanel;
     private JMenuItem importData;
 
     public MainUI(IDatabase db, WindowListener l) {
         this.db = db;
         welcomePanel = new WelcomePanel(l);
-        accountPanel = new AccountInfoPanel();
         dataImportPanel = new DataImportPanel();
         dataDisplayPanel = new DataDisplayPanel();
-        orderPanel = new OrderPanel();
 
         addWindowListener(l);
         setIconImage(icons.get(IconType.GENERAL));
@@ -72,21 +67,13 @@ public class MainUI extends JFrame implements IconSupplier {
     private void signUp() {
         try {
             var u = welcomePanel.getSingUpUser();
-            var p = welcomePanel.getRegisteredProfile();
             var userInfo = List.of(u.account, u.password);
-            var shippingInfo = packageShippingInfo(u.account, p);
-            db.register(userInfo, shippingInfo);
+            db.register(userInfo);
             JOptionPane.showMessageDialog(MainUI.this, "账号注册成功");
         }
         catch (Exception e) {
             showErrorDialog(e.getMessage());
         }
-    }
-
-    private List<String> packageShippingInfo(String account, Profile p) {
-        var shippingInfo = new LinkedList<>(p.toList());
-        shippingInfo.addFirst(account);
-        return shippingInfo;
     }
 
     private void configureJMenuBar() {
@@ -96,28 +83,13 @@ public class MainUI extends JFrame implements IconSupplier {
     }
 
     private void populateJMenuBar(JMenuBar menuBar) {
-        var modify = Utils.makeJMenuItem("添加信息", e -> showUserInfoModifyDialog());
         var signOut = Utils.makeJMenuItem("登出账户", e -> showSignOutDialog());
-        var account = Utils.makeJMenu("账户", modify, signOut);
+        var account = Utils.makeJMenu("账户", signOut);
         var print = Utils.makeJMenuItem("电子版打印", e -> dataDisplayPanel.print());
-        var delivery = Utils.makeJMenuItem("纸质版邮寄", e -> showFillOrderDialog());
-        var statistics = Utils.makeJMenu("数据统计", print, delivery);
+        var statistics = Utils.makeJMenu("数据统计", print);
         importData = Utils.makeJMenuItem("数据导入", e -> showDataImportDialog());
         var functions = Utils.makeJMenu("功能", statistics, importData);
         Utils.addAll(menuBar, account, functions);
-    }
-
-    private void showUserInfoModifyDialog() {
-        showDialog(() -> accountPanel.showDialog(MainUI.this),
-                Option.OK, this::modifyUserInfo, Option.CANCEL, accountPanel::closeDialog);
-    }
-
-    private void modifyUserInfo() {
-        var u = accountPanel.getUser();
-        var p = accountPanel.getProfile();
-        var shippingInfo = packageShippingInfo(u.account, p);
-        db.insertShippingInfo(shippingInfo);
-        JOptionPane.showMessageDialog(MainUI.this, "信息添加成功");
     }
 
     private void showSignOutDialog() {
@@ -135,17 +107,6 @@ public class MainUI extends JFrame implements IconSupplier {
     private void signOut() {
         db.disconnect();
         setVisible(false);
-    }
-
-    private void showFillOrderDialog() {
-        showDialog(() -> orderPanel.showDialog(MainUI.this),
-                Option.OK, this::sendOrder, Option.ERROR, () -> showErrorDialog("订单填写错误！"));
-    }
-
-    private void sendOrder() {
-        if (dataDisplayPanel.hasData())
-            JOptionPane.showMessageDialog(MainUI.this, "您的包裹将在xx天后送达！");
-        else showErrorDialog("请选择需要的数据！");
     }
 
     private void showDataImportDialog() {

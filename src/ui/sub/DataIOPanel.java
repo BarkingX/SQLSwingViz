@@ -73,10 +73,6 @@ public class DataIOPanel extends JPanel implements MetadataSupplier<String> {
         fields.getFirst().requestFocus();
     }
 
-    public void setEditableFor(int column, boolean isEditable) {
-        getTextField(column).setEditable(isEditable);
-    }
-
     public @NotNull JTextField getTextField(int column) {
         var field = fields.getColumnLabel(column);
         return field instanceof JPasswordField ? (JPasswordField) field : field;

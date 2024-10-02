@@ -26,7 +26,7 @@ public abstract class SignPanel extends DataIODialogWrapper implements IconSuppl
     }
 
     public boolean checkIntegrity() {
-        return !getTextOf(ACCOUNT_COLUMN).isEmpty() && !getTextOf(PASSWORD_COLUMN).isEmpty();
+        return allHaveText(ACCOUNT_COLUMN, PASSWORD_COLUMN);
     }
 
     @Override

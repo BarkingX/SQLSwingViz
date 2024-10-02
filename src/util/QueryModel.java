@@ -6,6 +6,7 @@ import javax.sql.rowset.CachedRowSet;
 import javax.swing.table.AbstractTableModel;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class QueryModel extends AbstractTableModel {
     private final CachedRowSet cachedRowSet;
@@ -18,11 +19,7 @@ public class QueryModel extends AbstractTableModel {
 
     @Override
     public int getRowCount() {
-        try {
-            cachedRowSet.last();
-            return cachedRowSet.getRow();
-        }
-        catch (SQLException e) { throw new RuntimeException(e); }
+        return cachedRowSet.size();
     }
 
     @Override
@@ -61,12 +58,7 @@ public class QueryModel extends AbstractTableModel {
     public Class<?> getColumnClass(int column) {
         try {
             var className = metaData.getColumnClassName(column + 1);
-            if ("java.sql.Time".equals(className)) {
-                return String.class;
-            }
-            else {
-                return Class.forName(className);
-            }
+            return "java.sql.Time".equals(className) ? String.class : Class.forName(className);
         }
         catch (SQLException | ClassNotFoundException e) {
             return String.class;

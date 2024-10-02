@@ -10,7 +10,8 @@ import util.Option;
 import javax.swing.*;
 import java.awt.*;
 
-public abstract class DataIODialogWrapper extends DialogWrapper implements MetadataSupplier<String>, IColumnConstants {
+public abstract class DataIODialogWrapper extends DialogWrapper
+        implements MetadataSupplier<String>, IColumnConstants {
     private final DataIOPanel dataIOPanel;
     private final JButton okButton;
 
@@ -41,20 +42,18 @@ public abstract class DataIODialogWrapper extends DialogWrapper implements Metad
         dataIOPanel.replaceWithPasswordField(column);
     }
 
-    public void setEditableFor(int column, boolean isEditable) {
-        dataIOPanel.setEditableFor(column, isEditable);
-    }
-
     public abstract String getTitle();
 
     public @NotNull String getTextOf(int column) {
         return dataIOPanel.getTextOf(column);
     }
 
-    public boolean haveText(int from, int to) {
+    public boolean allHaveText(int from, int to) {
         assert to <= dataIOPanel.getMetadata().size();
         for (int col = from; col <= to; col++) {
-            if (getTextOf(col).isEmpty()) return false;
+            if (getTextOf(col).isEmpty()) {
+                return false;
+            }
         }
         return true;
     }

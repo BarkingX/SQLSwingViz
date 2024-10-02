@@ -1,5 +1,6 @@
 package ui.util;
 
+import org.jetbrains.annotations.NotNull;
 import util.IconType;
 import util.Option;
 
@@ -9,19 +10,20 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.EnumMap;
 
 public class Utils {
     private Utils() {}
 
-    public static void centerWindow(Window window) {
+    public static void centerWindow(@NotNull Window window) {
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
         int x = (screen.width - window.getWidth()) / 2;
         int y = (screen.height - window.getHeight()) / 2;
         window.setLocation(x, y);
     }
 
-    public static void addAll(JComponent container, JComponent... components) {
+    public static void addAll(JComponent container, JComponent @NotNull ... components) {
         for (var component : components) container.add(component);
     }
 
@@ -53,11 +55,11 @@ public class Utils {
         JOptionPane.showMessageDialog(parentComponent, message, title, JOptionPane.ERROR_MESSAGE);
     }
 
-    public static EnumMap<IconType, Image> getIcons() {
+    public static @NotNull EnumMap<IconType, Image> getIcons() {
         var logos = new EnumMap<IconType, Image>(IconType.class);
 
         try {
-            String pathName = "D:\\Data\\java\\projects\\port_application\\src\\resource\\image\\";
+            var pathName = "D:\\Data\\workspace\\java\\projects\\port_application\\src\\resource\\image\\";
             var general = ImageIO.read(new File(pathName + "administrator.jpg"));
             var user = ImageIO.read(new File(pathName + "user.jpg"));
             var official = ImageIO.read(new File(pathName + "official.jpg"));

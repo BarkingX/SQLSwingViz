@@ -1,6 +1,7 @@
 package ui.abs;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import util.Option;
 import ui.util.Utils;
 
@@ -27,7 +28,7 @@ public abstract class DialogWrapper extends JPanel {
     public void setOption(@NotNull Option o) {
         option = o;
     }
-    public void setDialogIconImage(@NotNull Image icon) {
+    public void setDialogIconImage(@Nullable Image icon) {
         this.icon = icon;
     }
 

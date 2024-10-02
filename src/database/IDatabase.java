@@ -13,11 +13,9 @@ public interface IDatabase {
     void authorize(String account);
     void disconnect();
     void close();
-    void register(List<String> userInfo, List<String> shippingInfo) throws Exception;
+    void register(List<String> userInfo) throws Exception;
     void loadDataInfile(String path, String tableName);
-    void insertShippingInfo(List<String> shippingInfo);
     QueryModel queryWithFilter(FilterWrapper<String> mainFilter, AssignedFilterMap<String> assignedFilterMap);
-    QueryModel selectShippingInfo();
     boolean isConnected();
     boolean hasPrivilegeOfImportingData();
     boolean hasPrivilegeOfUserManagement();
