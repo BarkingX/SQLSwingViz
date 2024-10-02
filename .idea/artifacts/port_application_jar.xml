@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="port_application:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/port_application_jar</output-path>
+    <root id="archive" name="port_application.jar">
+      <element id="module-output" name="port_application" />
+    </root>
+  </artifact>
+</component>
