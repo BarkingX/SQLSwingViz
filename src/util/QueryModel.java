@@ -6,7 +6,6 @@ import javax.sql.rowset.CachedRowSet;
 import javax.swing.table.AbstractTableModel;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Objects;
 
 public class QueryModel extends AbstractTableModel {
     private final CachedRowSet cachedRowSet;

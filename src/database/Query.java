@@ -15,5 +15,5 @@ public interface Query {
     String SELECT_CITY_NAME = "SELECT DISTINCT city_name FROM port_view";
     String SELECT_PORT_CODE = "SELECT DISTINCT port_code FROM port_view";
     String SELECT_SEA_NAME = "SELECT DISTINCT sea_name FROM port_view";
-    String SELECT_ROLE = "SELECT type FROM user WHERE account = ?";
+    String SELECT_ROLE = "SELECT CURRENT_ROLE()";
 }

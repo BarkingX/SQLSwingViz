@@ -7,10 +7,11 @@ import ui.util.Utils;
 import util.*;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.WindowListener;
-import java.util.List;
-import java.util.function.Supplier;
+
+import static ui.util.Utils.showDialog;
 
 public class MainUI extends JFrame implements IconSupplier {
     private final static int DEFAULT_WIDTH = 1200;
@@ -37,23 +38,14 @@ public class MainUI extends JFrame implements IconSupplier {
     }
 
     private void showWelcomeDialog() {
-        while (!db.isConnected())
+        while (db.isClosed())
             showDialog(() -> welcomePanel.showDialog(MainUI.this),
-                    Option.SIGNIN, this::signIn, Option.SIGNUP, this::signUp);
-    }
-
-    private void showDialog(Supplier<Option> showDialog, Option success, Runnable afterSuccess,
-                            Option failed, Runnable afterFailed) {
-        var result = showDialog.get();
-        if (result == success) afterSuccess.run();
-        else if (result == failed) afterFailed.run();
+                       Option.SIGNIN, this::signIn, Option.SIGNUP, this::signUp);
     }
 
     private void signIn() {
         try {
-            var u = welcomePanel.getSignInUser();
-            db.authenticate(u);
-            db.authorize(u.account);
+            db.authenticate(welcomePanel.getSignInUser());
         }
         catch (RuntimeException e) {
             showErrorDialog(e.getMessage());
@@ -66,9 +58,7 @@ public class MainUI extends JFrame implements IconSupplier {
 
     private void signUp() {
         try {
-            var u = welcomePanel.getSingUpUser();
-            var userInfo = List.of(u.account, u.password);
-            db.register(userInfo);
+            db.register(welcomePanel.getSingUpUser());
             JOptionPane.showMessageDialog(MainUI.this, "账号注册成功");
         }
         catch (Exception e) {
@@ -95,7 +85,8 @@ public class MainUI extends JFrame implements IconSupplier {
     private void showSignOutDialog() {
         showDialog(() -> Utils.showConfirmDialog(MainUI.this, "请确认是否要退出登录", "退出登录",
                     JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE),
-                Option.OK, this::signOutAndReEnterWelcomePage, Option.CANCEL, () -> {});
+                Option.OK, this::signOutAndReEnterWelcomePage,
+                Option.CANCEL, null);
     }
 
     private void signOutAndReEnterWelcomePage() {
@@ -111,8 +102,8 @@ public class MainUI extends JFrame implements IconSupplier {
 
     private void showDataImportDialog() {
         showDialog(() -> dataImportPanel.showDialog(MainUI.this),
-                Option.OK, this::importData, Option.ERROR,
-                () -> showErrorDialog("请选择需要导入的文件"));
+                Option.OK, this::importData,
+                Option.ERROR, () -> showErrorDialog("请选择需要导入的文件"));
     }
 
     private void importData() {
@@ -128,7 +119,7 @@ public class MainUI extends JFrame implements IconSupplier {
     }
 
     private void initializeConfiguration() {
-        authorize();
+        importData.setEnabled(db.hasPrivilegeOfImportingData());
         configureDataDisplayPanel();
         configureDataImportPanelIfNeeded();
         setTitle("当前登录用户：" + welcomePanel.getSignInUser().account);
@@ -136,14 +127,19 @@ public class MainUI extends JFrame implements IconSupplier {
         pack();
     }
 
-    private void authorize() {
-        importData.setEnabled(db.hasPrivilegeOfImportingData());
-    }
-
     private void configureDataDisplayPanel() {
         dataDisplayPanel.reset();
         dataDisplayPanel.configureMainFilter(db.getQueryTypeFilterMap(), this::afterSelection);
         dataDisplayPanel.configureQueryAction(this::fireQueryAction);
+    }
+
+    private void configureDataImportPanelIfNeeded() {
+        if (importData.isEnabled()) {
+            dataImportPanel.resetAfterReEnter();
+            var tableNames = db.getTableNames();
+            tableNames.remove("user");
+            dataImportPanel.populateTableNameComboBox(tableNames);
+        }
     }
 
     private void afterSelection(FilterWrapper<String> mainFilter) {
@@ -154,19 +150,8 @@ public class MainUI extends JFrame implements IconSupplier {
 
     private void fireQueryAction(FilterWrapper<String> mainFilter) {
         var filter = dataDisplayPanel.getSelectedFilter();
-        var model = db.queryWithFilter(mainFilter, filter);
-        if (model == null) return;
-        dataDisplayPanel.display(model);
-    }
-
-    private void configureDataImportPanelIfNeeded() {
-        if (importData.isEnabled()) {
-            dataImportPanel.resetAfterReEnter();
-            var tableNames = db.getTableNames();
-            tableNames.remove("user");
-            tableNames.remove("shipping_info");
-            dataImportPanel.populateTableNameComboBox(tableNames);
-        }
+        dataDisplayPanel.display(db.queryWithFilter(mainFilter, filter)
+                                   .orElse(new DefaultTableModel()));
     }
 
     @Override

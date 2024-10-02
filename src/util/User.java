@@ -2,6 +2,8 @@ package util;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class User implements MetadataSupplier<String> {
     public static final StrMetadata METADATA = new StrMetadata("账号", "密码");
     public final String account;
@@ -14,5 +16,9 @@ public class User implements MetadataSupplier<String> {
     @Override
     public @NotNull Metadata<String> getMetadata() {
         return METADATA;
+    }
+
+    public @NotNull List<String> toList() {
+        return List.of(account, password);
     }
 }

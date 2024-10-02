@@ -1,22 +1,23 @@
 package database;
 
+import org.jetbrains.annotations.NotNull;
 import util.*;
 
+import javax.swing.table.TableModel;
 import java.util.Collection;
-import java.util.List;
+import java.util.Optional;
 
 public interface IDatabase {
-    Collection<String> getTableNames();
-    UnassignedFilterMap<String> getQueryTypeFilterMap();
-    UnassignedFilterMap<String> getFilterMap(FilterWrapper<String> mainFilter);
+    @NotNull Collection<String> getTableNames();
+    @NotNull UnassignedFilterMap<String> getQueryTypeFilterMap();
+    @NotNull UnassignedFilterMap<String> getFilterMap(FilterWrapper<String> mainFilter);
     void authenticate(User user);
-    void authorize(String account);
     void disconnect();
     void close();
-    void register(List<String> userInfo) throws Exception;
+    void register(User user) throws Exception;
     void loadDataInfile(String path, String tableName);
-    QueryModel queryWithFilter(FilterWrapper<String> mainFilter, AssignedFilterMap<String> assignedFilterMap);
-    boolean isConnected();
+    Optional<TableModel> queryWithFilter(FilterWrapper<String> mainFilter,
+                                         AssignedFilterMap<String> assignedFilterMap);
+    boolean isClosed();
     boolean hasPrivilegeOfImportingData();
-    boolean hasPrivilegeOfUserManagement();
 }

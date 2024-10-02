@@ -3,8 +3,8 @@ package database;
 import org.jetbrains.annotations.NotNull;
 import util.*;
 
-import javax.sql.rowset.RowSetFactory;
 import javax.sql.rowset.RowSetProvider;
+import javax.swing.table.TableModel;
 import java.sql.*;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -13,21 +13,16 @@ import java.util.function.Supplier;
 import static database.Query.*;
 import static util.FilterType.*;
 
+
 public class Database implements IDatabase {
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/port";
-    private final DatabaseMetaData databaseMetaData;
     private final UnassignedFilterMap<String> filterMap;
-    private final RowSetFactory factory;
     private final Connection root;
     private PreparedStatement stat;
     private Connection user;
-    private Role role;
-    private boolean isConnected;
 
     public Database() throws SQLException {
         root = DriverManager.getConnection(URL, "root", "527310");
-        factory = RowSetProvider.newFactory();
-        databaseMetaData = root.getMetaData();
         filterMap = new UnassignedFilterMap<>();
         populateFilterMap();
     }
@@ -41,25 +36,30 @@ public class Database implements IDatabase {
         loadFilter(SEA_NAME, () -> selectAndReturnCollection(root, SELECT_SEA_NAME));
     }
 
-    private void loadFilter(FilterType filterType, Supplier<Collection<String>> filterSupplier) {
+    private void loadFilter(FilterType filterType,
+                            @NotNull Supplier<Collection<String>> filterSupplier) {
         var filter = filterSupplier.get();
         filter.add(null);
         filterMap.put(filterType, filter);
     }
 
-    public Collection<String> selectAndReturnCollection(Connection conn, String query) {
-        var result = new LinkedHashSet<String>();
+    public @NotNull Collection<String> selectAndReturnCollection(Connection conn, String query) {
         try (var stat = conn.createStatement();
              var rs = stat.executeQuery(query)) {
-            while (rs.next()) result.add(rs.getString(1));
+            var result = new LinkedHashSet<String>();
+            while (rs.next()) {
+                result.add(rs.getString(1));
+            }
+            return result;
         }
-        catch (SQLException e) { e.printStackTrace(); }
-        return result;
+        catch (SQLException e) {
+            return Collections.emptySet();
+        }
     }
 
     @Override
     public @NotNull Collection<String> getTableNames() {
-        try (var rs = databaseMetaData.getTables("port", null,
+        try (var rs = root.getMetaData().getTables("port", null,
                 null, new String[] { "TABLE" })) {
             var tableNames = new LinkedList<String>();
             while (rs.next()) {
@@ -68,7 +68,6 @@ public class Database implements IDatabase {
             return tableNames;
         }
         catch (SQLException e) {
-            e.printStackTrace();
             return Collections.emptyList();
         }
     }
@@ -77,24 +76,19 @@ public class Database implements IDatabase {
     public void authenticate(@NotNull User user) {
         try {
             this.user = DriverManager.getConnection(URL, user.account, user.password);
-            isConnected = true;
         }
         catch (SQLException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
 
-    @Override
-    public void authorize(@NotNull String account) {
-        if (account.equals("root")) role = Role.ROOT;
-        else {
-            try (var rs = executeQuery(root, SELECT_ROLE, List.of(account))) {
-                role = rs.next() ? Role.valueOf(rs.getString("type").toUpperCase()) : Role.UNKNOWN;
-            }
-            catch (SQLException e) {
-                e.printStackTrace();
-            }
+    private @NotNull Role selectRole() {
+        try (var rs = executeQuery(this.user, SELECT_ROLE, Collections.emptyList())) {
+            return rs.next() ? Role.valueOf(rs.getString(1).split("`")[1].toUpperCase())
+                             : Role.ROOT;
+        }
+        catch (SQLException | IllegalArgumentException e) {
+            return Role.UNKNOWN;
         }
     }
 
@@ -108,11 +102,12 @@ public class Database implements IDatabase {
         stat.execute();
     }
 
-    private void prepare(Connection conn, String query, List<String> parameters) throws SQLException {
+    private void prepare(@NotNull Connection conn, String query,
+                         @NotNull List<String> parameters) throws SQLException {
         stat = conn.prepareStatement(query);
         for (int i = 0; i < parameters.size(); i++) {
             var p = parameters.get(i);
-            if (!(p == null)) {
+            if (p != null) {
                 stat.setString(i + 1, p);
             }
             else {
@@ -123,14 +118,8 @@ public class Database implements IDatabase {
 
     @Override
     public void disconnect() {
-        isConnected = false;
-    }
-
-    @Override
-    public void close() {
         try {
-            root.close();
-            if (user != null && !user.isClosed()) user.close();
+            user.close();
         }
         catch (SQLException e) {
             e.printStackTrace();
@@ -138,12 +127,25 @@ public class Database implements IDatabase {
     }
 
     @Override
-    public void register(List<String> userInfo) throws Exception {
+    public void close() {
+        try {
+            root.close();
+            if (user != null && !user.isClosed()) {
+                disconnect();
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void register(@NotNull User user) throws Exception {
         boolean autoCommit = root.getAutoCommit();
         try {
             root.setAutoCommit(false);
-            executeUpdate(root, CREATE_USER, userInfo);
-            executeUpdate(root, INSERT_USER_INFO, userInfo);
+            executeUpdate(root, CREATE_USER, user.toList());
+            executeUpdate(root, INSERT_USER_INFO, user.toList());
             root.commit();
         }
         catch (SQLException e) {
@@ -161,9 +163,8 @@ public class Database implements IDatabase {
         stat.getUpdateCount();
     }
 
-
     @Override
-    public void loadDataInfile(String path, String tableName) {
+    public void loadDataInfile(@NotNull String path, String tableName) {
         try {
             var filePath = '\'' + path.replaceAll("\\\\", "/") + '\'';
             var query = LOAD_DATA_INFILE.replaceFirst("\\?", filePath).replace("?", tableName);
@@ -176,24 +177,22 @@ public class Database implements IDatabase {
     }
 
     @Override
-    public QueryModel queryWithFilter(FilterWrapper<String> mainFilter,
-                                      AssignedFilterMap<String> assignedFilterMap) {
-        var queryType = QueryType.ofValue(mainFilter.getValue());
-        var query = configureQuery(queryType);
-        var parameters = configureParameters(queryType, assignedFilterMap);
+    public Optional<TableModel> queryWithFilter(@NotNull FilterWrapper<String> mainFilter,
+                                                @NotNull AssignedFilterMap<String> assignedFilterMap) {
+        var query = configureQuery(QueryType.ofValue(mainFilter.getValue()));
+        var parameters = configureParameters(QueryType.ofValue(mainFilter.getValue()), assignedFilterMap);
 
         try (var rs = executeQuery(user, query, parameters)) {
-            var crs = factory.createCachedRowSet();
+            var crs = RowSetProvider.newFactory().createCachedRowSet();
             crs.populate(rs);
-            return new QueryModel(crs);
+            return Optional.of(new QueryModel(crs));
         }
         catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            return Optional.empty();
         }
     }
 
-    private String configureQuery(QueryType queryType) {
+    private @NotNull String configureQuery(QueryType queryType) {
         return QueryType.RECORD.equals(queryType) ?
                 CALL_SHOW_RECORD : (QueryType.SAMPLE.equals(queryType) ?
                 CALL_SHOW_SAMPLE : (QueryType.PORT.equals(queryType) ?
@@ -201,8 +200,8 @@ public class Database implements IDatabase {
                 CALL_SHOW_NO_STATION : (QueryType.SAMPLE_STATISTICS.equals(queryType) ?
                 CALL_SHOW_SAMPLE_STATISTICS : CALL_SHOW_ANNUAL_REPORT))));
     }
-    private List<String> configureParameters(QueryType queryType,
-                                             AssignedFilterMap<String> assignedFilterMap) {
+    private @NotNull List<String> configureParameters(QueryType queryType,
+                                                      @NotNull AssignedFilterMap<String> assignedFilterMap) {
         var parameters = new ArrayList<String>();
 
         var port = assignedFilterMap.get(PORT_CODE);
@@ -222,7 +221,8 @@ public class Database implements IDatabase {
     }
 
     @Override
-    public UnassignedFilterMap<String> getQueryTypeFilterMap() {
+    public @NotNull UnassignedFilterMap<String> getQueryTypeFilterMap() {
+        var role = selectRole();
         var queryType = new LinkedHashSet<>(Set.of(QueryType.RECORD.value, QueryType.SAMPLE.value));
         if (role.equals(Role.ADMIN))
             queryType.add(QueryType.PORT.value);
@@ -233,7 +233,7 @@ public class Database implements IDatabase {
     }
 
     @Override
-    public UnassignedFilterMap<String> getFilterMap(@NotNull FilterWrapper<String> mainFilter) {
+    public @NotNull UnassignedFilterMap<String> getFilterMap(@NotNull FilterWrapper<String> mainFilter) {
         var filterMap = new UnassignedFilterMap<String>();
         var queryType = QueryType.ofValue(mainFilter.getValue());
         if (QueryType.RECORD.equals(queryType) || QueryType.SAMPLE.equals(queryType)
@@ -257,18 +257,19 @@ public class Database implements IDatabase {
     }
 
     @Override
-    public boolean isConnected() {
-        return isConnected;
+    public boolean isClosed() {
+        try {
+            return user == null || user.isClosed();
+        }
+        catch (SQLException e) {
+            return true;
+        }
     }
 
     @Override
     public boolean hasPrivilegeOfImportingData() {
+        var role = selectRole();
         return role.equals(Role.ROOT) || role.equals(Role.ADMIN);
-    }
-
-    @Override
-    public boolean hasPrivilegeOfUserManagement() {
-        return role.equals(Role.ROOT);
     }
 
     private enum Role {
@@ -280,6 +281,7 @@ public class Database implements IDatabase {
         NO_STATION("没有监测点的港口"), SAMPLE_STATISTICS("年平均水质"),
         ANNUAL_REPORT("年度数据报告");
         private final String value;
+
         QueryType(String value) {
             this.value = value;
         }

@@ -1,6 +1,7 @@
 package ui.util;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import util.IconType;
 import util.Option;
 
@@ -10,8 +11,10 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.Map;
+import java.util.function.Supplier;
 
 public class Utils {
     private Utils() {}
@@ -45,19 +48,28 @@ public class Utils {
         return menu;
     }
 
-    public static Option showConfirmDialog(Component parentComponent, Object message,
+    public static void showDialog(@NotNull Supplier<Option> showDialog,
+                                   Option success, @Nullable Runnable afterSuccess,
+                                   Option failed, @Nullable Runnable afterFailed) {
+        if (showDialog.get() == success && afterSuccess != null) {
+            afterSuccess.run();
+        }
+        else if (showDialog.get() == failed && afterFailed != null) {
+            afterFailed.run();
+        }
+    }
+
+    public static Option showConfirmDialog(Component parent, Object message,
                                            String title, int optionType, int messageType) {
-        int result = JOptionPane.showConfirmDialog(parentComponent, message, title, optionType, messageType);
+        int result = JOptionPane.showConfirmDialog(parent, message, title, optionType, messageType);
         return result == JOptionPane.YES_OPTION ? Option.OK : Option.CANCEL;
     }
 
-    public static void showErrorDialog(Component parentComponent, Object message, String title) {
-        JOptionPane.showMessageDialog(parentComponent, message, title, JOptionPane.ERROR_MESSAGE);
+    public static void showErrorDialog(Component parent, Object message, String title) {
+        JOptionPane.showMessageDialog(parent, message, title, JOptionPane.ERROR_MESSAGE);
     }
 
-    public static @NotNull EnumMap<IconType, Image> getIcons() {
-        var logos = new EnumMap<IconType, Image>(IconType.class);
-
+    public static @NotNull Map<IconType, Image> getIcons() {
         try {
             var pathName = "D:\\Data\\workspace\\java\\projects\\port_application\\src\\resource\\image\\";
             var general = ImageIO.read(new File(pathName + "administrator.jpg"));
@@ -65,14 +77,15 @@ public class Utils {
             var official = ImageIO.read(new File(pathName + "official.jpg"));
             var administrator = ImageIO.read(new File(pathName + "administrator.jpg"));
 
+            var logos = new EnumMap<IconType, Image>(IconType.class);
             logos.put(IconType.GENERAL, general);
             logos.put(IconType.USER, user);
             logos.put(IconType.OFFICIAL, official);
             logos.put(IconType.ADMINISTRATOR, administrator);
+            return logos;
         }
         catch (IOException e) {
-            e.printStackTrace();
+            return Collections.emptyMap();
         }
-        return logos;
     }
 }

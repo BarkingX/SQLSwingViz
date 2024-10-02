@@ -3,8 +3,8 @@ package ui.util;
 import util.IconType;
 
 import java.awt.*;
-import java.util.EnumMap;
+import java.util.Map;
 
 public interface IconSupplier {
-    EnumMap<IconType, Image> icons = Utils.getIcons();
+    Map<IconType, Image> icons = Utils.getIcons();
 }

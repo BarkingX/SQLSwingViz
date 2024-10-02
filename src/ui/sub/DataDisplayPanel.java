@@ -1,5 +1,6 @@
 package ui.sub;
 
+import org.jetbrains.annotations.NotNull;
 import util.FilterWrapper;
 import ui.util.ComboBoxFilter;
 import ui.util.Utils;
@@ -17,7 +18,6 @@ import java.util.function.Consumer;
 
 public class DataDisplayPanel extends JPanel {
     private static final byte MAX_SIZEABLE_COL = 10;
-    private static final TableModel emptyModel = new DefaultTableModel();
     private final LinkedList<ComboBoxFilter> comboBoxFilters;
     private final JPanel filterPanel;
     private final JTable dataTable;
@@ -41,8 +41,8 @@ public class DataDisplayPanel extends JPanel {
         add(filterPanel, BorderLayout.NORTH);
     }
 
-    public void configureMainFilter(UnassignedFilterMap<String> mainFilterMap,
-                                    Consumer<FilterWrapper<String>> afterSelection) {
+    public void configureMainFilter(@NotNull UnassignedFilterMap<String> mainFilterMap,
+                                    @NotNull Consumer<FilterWrapper<String>> afterSelection) {
         var rawMainFilter = mainFilterMap.entrySet().iterator().next();
 
         mainFilter = new ComboBoxFilter(rawMainFilter.getKey(), rawMainFilter.getValue());
@@ -51,27 +51,23 @@ public class DataDisplayPanel extends JPanel {
             comboBoxFilters.clear();
             afterSelection.accept(mainFilter);
         });
-
         filterPanel.add(mainFilter);
     }
 
-    public void configureFilters(UnassignedFilterMap<String> unassignedFilterMap) {
+    public void configureFilters(@NotNull UnassignedFilterMap<String> unassignedFilterMap) {
         unassignedFilterMap.forEach((filterType, values) -> {
-            var comboBoxFilter = new ComboBoxFilter(filterType, values);
-            comboBoxFilters.add(comboBoxFilter);
+            comboBoxFilters.add(new ComboBoxFilter(filterType, values));
         });
         comboBoxFilters.forEach(filterPanel::add);
     }
 
-    public void configureQueryAction(final Consumer<FilterWrapper<String>> fireQuery) {
-        var queryButton = Utils.makeJButton("查询",  e -> fireQuery.accept(mainFilter));
-        filterPanel.add(queryButton);
+    public void configureQueryAction(@NotNull final Consumer<FilterWrapper<String>> fireQuery) {
+        filterPanel.add(Utils.makeJButton("查询",  e -> fireQuery.accept(mainFilter)));
     }
 
-    public void display(TableModel tableModel) {
-        var sorter = new TableRowSorter<>(tableModel);
+    public void display(@NotNull TableModel tableModel) {
         dataTable.setModel(tableModel);
-        dataTable.setRowSorter(sorter);
+        dataTable.setRowSorter(new TableRowSorter<>(tableModel));
         dataTable.setAutoResizeMode(tableModel.getColumnCount() > MAX_SIZEABLE_COL ?
                 JTable.AUTO_RESIZE_OFF : JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         dataTable.doLayout();
@@ -87,17 +83,12 @@ public class DataDisplayPanel extends JPanel {
         }
     }
 
-    public boolean hasData() {
-        var model = dataTable.getModel();
-        return model != null && model.getRowCount() != 0;
-    }
-
-    public AssignedFilterMap<String> getSelectedFilter() {
+    public @NotNull AssignedFilterMap<String> getSelectedFilter() {
         return new AssignedFilterMap<>(comboBoxFilters);
     }
 
     public void reset() {
-        display(emptyModel);
+        display(new DefaultTableModel());
         filterPanel.removeAll();
     }
 }
