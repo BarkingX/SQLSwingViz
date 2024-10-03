@@ -1,5 +1,6 @@
 package ui.util;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import util.IconType;
@@ -9,6 +10,9 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -17,6 +21,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class Utils {
+    public static final Map<IconType, Image> ICONS = getIcons();
     private Utils() {}
 
     public static void centerWindow(@NotNull Window window) {
@@ -30,19 +35,19 @@ public class Utils {
         for (var component : components) container.add(component);
     }
 
-    public static JButton makeJButton(String text, ActionListener l) {
+    public static @NotNull JButton makeJButton(String text, ActionListener l) {
         var button = new JButton(text);
         button.addActionListener(l);
         return button;
     }
 
-    public static JMenuItem makeJMenuItem(String text, ActionListener listener) {
+    public static @NotNull JMenuItem makeJMenuItem(String text, ActionListener listener) {
         var menuItem = new JMenuItem(text);
         menuItem.addActionListener(listener);
         return menuItem;
     }
 
-    public static JMenu makeJMenu(String text, JMenuItem... items) {
+    public static @NotNull JMenu makeJMenu(String text, JMenuItem @NotNull ... items) {
         var menu = new JMenu(text);
         for (var item : items) menu.add(item);
         return menu;
@@ -87,5 +92,22 @@ public class Utils {
         catch (IOException e) {
             return Collections.emptyMap();
         }
+    }
+
+    @Contract(value = "_ -> new", pure = true)
+    public static @NotNull WindowListener exitOnClosing(@Nullable Runnable action) {
+        return new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (action != null) {
+                    action.run();
+                }
+                System.exit(0);
+            }
+        };
+    }
+
+    public static @NotNull Image getIcon(@NotNull IconType type) {
+        return ICONS.get(type);
     }
 }

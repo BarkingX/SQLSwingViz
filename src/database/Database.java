@@ -14,16 +14,15 @@ import static database.Query.*;
 import static util.FilterType.*;
 
 
-public class Database implements IDatabase {
+public class Database implements IDatabase, AutoCloseable {
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/port";
-    private final UnassignedFilterMap<String> filterMap;
+    private final UnassignedFilterMap<String> filterMap = new UnassignedFilterMap<>();
     private final Connection root;
     private PreparedStatement stat;
     private Connection user;
 
     public Database() throws SQLException {
         root = DriverManager.getConnection(URL, "root", "527310");
-        filterMap = new UnassignedFilterMap<>();
         populateFilterMap();
     }
 
@@ -40,7 +39,7 @@ public class Database implements IDatabase {
                             @NotNull Supplier<Collection<String>> filterSupplier) {
         var filter = filterSupplier.get();
         filter.add(null);
-        filterMap.put(filterType, filter);
+        filterMap.put(filterType, new LinkedHashSet<>(filter));
     }
 
     public @NotNull Collection<String> selectAndReturnCollection(Connection conn, String query) {
@@ -139,6 +138,7 @@ public class Database implements IDatabase {
         }
     }
 
+    //TODO validate
     @Override
     public void register(@NotNull User user) throws Exception {
         boolean autoCommit = root.getAutoCommit();
@@ -201,21 +201,21 @@ public class Database implements IDatabase {
                 CALL_SHOW_SAMPLE_STATISTICS : CALL_SHOW_ANNUAL_REPORT))));
     }
     private @NotNull List<String> configureParameters(QueryType queryType,
-                                                      @NotNull AssignedFilterMap<String> assignedFilterMap) {
+                                                      @NotNull AssignedFilterMap<String> filterMap) {
         var parameters = new ArrayList<String>();
 
-        var port = assignedFilterMap.get(PORT_CODE);
-        if (QueryType.RECORD.equals(queryType) || QueryType.SAMPLE.equals(queryType)
+        if (QueryType.RECORD.equals(queryType)
+                || QueryType.SAMPLE.equals(queryType)
                 || QueryType.PORT.equals(queryType)) {
-            var city = assignedFilterMap.get(CITY_NAME);
-            var sea = assignedFilterMap.get(SEA_NAME);
-            parameters.addAll(Arrays.asList(city, port, sea));
+            var city = filterMap.get(CITY_NAME);
+            var sea = filterMap.get(SEA_NAME);
+            parameters.addAll(Arrays.asList(city, filterMap.get(PORT_CODE), sea));
         }
-        else if (QueryType.SAMPLE_STATISTICS.equals(queryType))
-            parameters.add(port);
+        else if (QueryType.SAMPLE_STATISTICS.equals(queryType)) {
+            parameters.add(filterMap.get(PORT_CODE));
+        }
         else if (QueryType.ANNUAL_REPORT.equals(queryType)){
-            var year = assignedFilterMap.get(YEAR);
-            parameters.addAll(Arrays.asList(port, year));
+            parameters.addAll(Arrays.asList(filterMap.get(PORT_CODE), filterMap.get(YEAR)));
         }
         return parameters;
     }
@@ -224,11 +224,13 @@ public class Database implements IDatabase {
     public @NotNull UnassignedFilterMap<String> getQueryTypeFilterMap() {
         var role = selectRole();
         var queryType = new LinkedHashSet<>(Set.of(QueryType.RECORD.value, QueryType.SAMPLE.value));
-        if (role.equals(Role.ADMIN))
+        if (role.equals(Role.ADMIN)) {
             queryType.add(QueryType.PORT.value);
-        else if (role.equals(Role.OFFICIAL))
+        }
+        else if (role.equals(Role.OFFICIAL)) {
             queryType.addAll(Set.of(QueryType.NO_STATION.value, QueryType.SAMPLE_STATISTICS.value,
-                                    QueryType.ANNUAL_REPORT.value));
+                    QueryType.ANNUAL_REPORT.value));
+        }
         return new UnassignedFilterMap<>(QUERY_TYPE, queryType);
     }
 
@@ -236,14 +238,16 @@ public class Database implements IDatabase {
     public @NotNull UnassignedFilterMap<String> getFilterMap(@NotNull FilterWrapper<String> mainFilter) {
         var filterMap = new UnassignedFilterMap<String>();
         var queryType = QueryType.ofValue(mainFilter.getValue());
-        if (QueryType.RECORD.equals(queryType) || QueryType.SAMPLE.equals(queryType)
+        if (QueryType.RECORD.equals(queryType)
+                || QueryType.SAMPLE.equals(queryType)
                 || QueryType.PORT.equals(queryType)) {
             loadFilter(CITY_NAME, filterMap::put);
             loadFilter(PORT_CODE, filterMap::put);
             loadFilter(SEA_NAME, filterMap::put);
         }
-        else if (QueryType.SAMPLE_STATISTICS.equals(queryType))
+        else if (QueryType.SAMPLE_STATISTICS.equals(queryType)){
             loadFilter(PORT_CODE, filterMap::put);
+        }
         else if (QueryType.ANNUAL_REPORT.equals(queryType)) {
             loadFilter(PORT_CODE, filterMap::put);
             loadFilter(YEAR, filterMap::put);
@@ -252,7 +256,7 @@ public class Database implements IDatabase {
     }
 
     private void loadFilter(@NotNull FilterType filterType,
-                            @NotNull BiConsumer<FilterType, LinkedHashSet<String>> mapLoader) {
+                            @NotNull BiConsumer<FilterType, Set<String>> mapLoader) {
         mapLoader.accept(filterType, filterMap.get(filterType));
     }
 

@@ -1,23 +1,18 @@
 package ui.util;
 
+import org.jetbrains.annotations.NotNull;
 import util.FilterType;
 import util.FilterWrapper;
 
 import javax.swing.*;
 import java.util.Set;
 
-public class ComboBoxFilter extends JComboBox<String> implements FilterWrapper<String> {
-    private FilterType key;
+public class ComboBoxFilter<V> extends JComboBox<V> implements FilterWrapper<V> {
+    private final FilterType key;
 
-    public ComboBoxFilter(FilterType key, Set<String> values) {
-        put(key, values);
-    }
-
-    public void put(FilterType key, Set<String> values) {
+    public ComboBoxFilter(FilterType key, @NotNull Set<V> values) {
         this.key = key;
-        var model = new DefaultComboBoxModel<String>();
-        model.addAll(values);
-        setModel(model);
+        setModel(new DefaultComboBoxModel<>((V[]) values.toArray()));
     }
 
     @Override
@@ -26,7 +21,8 @@ public class ComboBoxFilter extends JComboBox<String> implements FilterWrapper<S
     }
 
     @Override
-    public String getValue() {
-        return (String) getSelectedItem();
+    public V getValue() {
+        return (V) getSelectedItem();
     }
+
 }

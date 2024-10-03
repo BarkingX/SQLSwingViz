@@ -12,19 +12,12 @@ import java.sql.SQLException;
 
 public class PortAPP {
     public static void main(String[] args) throws SQLException {
-        final var db = new Database();
-        final var exit = new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                db.close();
-                System.exit(0);
-            }
-        };
-
-        EventQueue.invokeLater(() -> {
-            var frame = new MainUI(db, exit);
-            Utils.centerWindow(frame);
-            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        });
+        try (final var db = new Database()) {
+            EventQueue.invokeLater(() -> {
+                var frame = new MainUI(db);
+                Utils.centerWindow(frame);
+                frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            });
+        }
     }
 }

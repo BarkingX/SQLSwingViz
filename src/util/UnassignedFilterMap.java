@@ -1,17 +1,11 @@
 package util;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+import java.util.*;
 
-public class UnassignedFilterMap<V> extends LinkedHashMap<FilterType, LinkedHashSet<V>> {
+public class UnassignedFilterMap<V> extends LinkedHashMap<FilterType, Set<V>> {
     public UnassignedFilterMap() {}
 
-    public UnassignedFilterMap(FilterType key, LinkedHashSet<V> values) {
-        put(key, values);
-    }
-
-    public void put(FilterType key, Collection<V> values) {
+    public UnassignedFilterMap(FilterType key, Set<V> values) {
         put(key, new LinkedHashSet<>(values));
     }
 }

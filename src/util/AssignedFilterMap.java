@@ -11,8 +11,6 @@ public class AssignedFilterMap<V> extends LinkedHashMap<FilterType, V> {
     }
 
     public void put(@NotNull FilterWrapper<V> filterWrapper) {
-        var key = filterWrapper.getKey();
-        var value = filterWrapper.getValue();
-        super.put(key, value);
+        put(filterWrapper.getKey(), filterWrapper.getValue());
     }
 }

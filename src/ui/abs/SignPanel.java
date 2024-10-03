@@ -1,17 +1,18 @@
 package ui.abs;
 
 import org.jetbrains.annotations.NotNull;
-import ui.util.IconSupplier;
 import ui.util.Utils;
 import util.IconType;
 import util.Option;
 import util.StrMetadata;
 import util.User;
 
-public abstract class SignPanel extends DataIODialogWrapper implements IconSupplier {
+import javax.swing.*;
+import java.awt.*;
+
+public abstract class SignPanel extends DataIODialogWrapper {
     public SignPanel() {
         replaceWithPasswordField(PASSWORD_COLUMN);
-        setDialogIconImage(icons.get(IconType.GENERAL));
     }
 
     @Override
@@ -25,6 +26,13 @@ public abstract class SignPanel extends DataIODialogWrapper implements IconSuppl
         }
     }
 
+    @Override
+    protected void initiateDialog(Component parent, JButton defaultButton) {
+        super.initiateDialog(parent, defaultButton);
+        setDialogIconImage(Utils.getIcon(IconType.GENERAL));
+    }
+
+    @Override
     public boolean checkIntegrity() {
         return allHaveText(ACCOUNT_COLUMN, PASSWORD_COLUMN);
     }

@@ -10,22 +10,21 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.io.File;
 import java.util.Collection;
+import java.util.Objects;
 
 public class DataImportPanel extends DialogWrapper {
-    private final JComboBox<String> tableNamesBox;
-    private final JFileChooser fileChooser;
-    private final JButton submit;
+    private final JComboBox<String> tableNamesBox = new JComboBox<>();
+    private final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
+    private final JButton submitBtn;
     private int result;
 
     public DataImportPanel() {
         setLayout(new FlowLayout());
-        tableNamesBox = new JComboBox<>();
-        fileChooser = new JFileChooser("D:\\Data\\database\\io\\port\\data");
-        submit = Utils.makeJButton("确认提交", e -> processSubmission());
-        var chooseFile = Utils.makeJButton("选择本地文件", e -> showOpenFileDialog());
-
         fileChooser.setFileFilter(new FileNameExtensionFilter("逗号分隔符文件", "csv"));
-        Utils.addAll(this, tableNamesBox, chooseFile, submit);
+
+        submitBtn = Utils.makeJButton("确认提交", e -> processSubmission());
+        var chooseFileBtn = Utils.makeJButton("选择本地文件", e -> showOpenFileDialog());
+        Utils.addAll(this, tableNamesBox, chooseFileBtn, submitBtn);
     }
 
     private void showOpenFileDialog() {
@@ -33,9 +32,8 @@ public class DataImportPanel extends DialogWrapper {
     }
 
     private void processSubmission() {
-        if (result == JFileChooser.APPROVE_OPTION && fileChooser.getSelectedFile() != null)
-            setOption(Option.OK);
-        else setOption(Option.ERROR);
+        var option = result == JFileChooser.APPROVE_OPTION && fileChooser.getSelectedFile() != null ? Option.OK : Option.ERROR;
+        setOption(option);
         closeDialog();
     }
 
@@ -43,23 +41,27 @@ public class DataImportPanel extends DialogWrapper {
         tableNames.forEach(tableNamesBox::addItem);
     }
 
-    public String getSelectedTableName() {
-        return (String) tableNamesBox.getSelectedItem();
+    public @NotNull String getSelectedTableName() {
+        return (String) Objects.requireNonNull(tableNamesBox.getSelectedItem());
     }
 
-    public File getSelectedFile() {
+    public @NotNull File getSelectedFile() {
         return fileChooser.getSelectedFile();
     }
 
     @Override
     public @NotNull Option showDialog(@NotNull Component parent) {
-        return showDialog(parent, submit, "数据录入");
+        return showDialog(parent, submitBtn, "数据录入");
     }
 
     @Override
     protected void reset() {
         result = JFileChooser.CANCEL_OPTION;
         setOption(Option.EXIT);
+    }
+
+    public boolean notInitiated() {
+        return tableNamesBox.getItemCount() == 0;
     }
 
     public void resetAfterReEnter() {

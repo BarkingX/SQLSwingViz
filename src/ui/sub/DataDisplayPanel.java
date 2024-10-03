@@ -18,22 +18,17 @@ import java.util.function.Consumer;
 
 public class DataDisplayPanel extends JPanel {
     private static final byte MAX_SIZEABLE_COL = 10;
-    private final LinkedList<ComboBoxFilter> comboBoxFilters;
-    private final JPanel filterPanel;
-    private final JTable dataTable;
-    private final JLabel count;
-    private ComboBoxFilter mainFilter;
+    private final LinkedList<ComboBoxFilter<String>> comboBoxFilters = new LinkedList<>();
+    private final JPanel filterPanel = new JPanel(new GridLayout());
+    private final JTable dataTable = new JTable();
+    private final JLabel count = new JLabel("0 条记录");;
+    private ComboBoxFilter<String> mainFilter;
 
     public DataDisplayPanel() {
         setLayout(new BorderLayout());
 
-        comboBoxFilters = new LinkedList<>();
-        filterPanel = new JPanel(new GridLayout());
-        dataTable = new JTable();
-        count = new JLabel("0 条记录");
         var tablePane = new JScrollPane(dataTable);
         var statusPanel = new JPanel();
-
         tablePane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         statusPanel.add(count);
         add(tablePane, BorderLayout.CENTER);
@@ -45,7 +40,7 @@ public class DataDisplayPanel extends JPanel {
                                     @NotNull Consumer<FilterWrapper<String>> afterSelection) {
         var rawMainFilter = mainFilterMap.entrySet().iterator().next();
 
-        mainFilter = new ComboBoxFilter(rawMainFilter.getKey(), rawMainFilter.getValue());
+        mainFilter = new ComboBoxFilter<>(rawMainFilter.getKey(), rawMainFilter.getValue());
         mainFilter.addActionListener(e -> {
             comboBoxFilters.forEach(filterPanel::remove);
             comboBoxFilters.clear();
@@ -55,9 +50,7 @@ public class DataDisplayPanel extends JPanel {
     }
 
     public void configureFilters(@NotNull UnassignedFilterMap<String> unassignedFilterMap) {
-        unassignedFilterMap.forEach((filterType, values) -> {
-            comboBoxFilters.add(new ComboBoxFilter(filterType, values));
-        });
+        unassignedFilterMap.forEach((type, values) -> comboBoxFilters.add(new ComboBoxFilter<>(type, values)));
         comboBoxFilters.forEach(filterPanel::add);
     }
 

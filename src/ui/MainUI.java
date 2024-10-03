@@ -2,34 +2,26 @@ package ui;
 
 import database.IDatabase;
 import ui.sub.*;
-import ui.util.IconSupplier;
 import ui.util.Utils;
 import util.*;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.WindowListener;
 
 import static ui.util.Utils.showDialog;
 
-public class MainUI extends JFrame implements IconSupplier {
+public class MainUI extends JFrame {
     private final static int DEFAULT_WIDTH = 1200;
     private final static int DEFAULT_HEIGHT = 800;
     private final IDatabase db;
-    private final WelcomePanel welcomePanel;
-    private final DataImportPanel dataImportPanel;
-    private final DataDisplayPanel dataDisplayPanel;
-    private JMenuItem importData;
+    private final WelcomePanel welcomePanel = new WelcomePanel();
+    private final DataImportPanel dataImportPanel = new DataImportPanel();
+    private final DataDisplayPanel dataDisplayPanel = new DataDisplayPanel();
 
-    public MainUI(IDatabase db, WindowListener l) {
+    public MainUI(IDatabase db) {
         this.db = db;
-        welcomePanel = new WelcomePanel(l);
-        dataImportPanel = new DataImportPanel();
-        dataDisplayPanel = new DataDisplayPanel();
-
-        addWindowListener(l);
-        setIconImage(icons.get(IconType.GENERAL));
+        setIconImage(Utils.getIcon(IconType.GENERAL));
         add(dataDisplayPanel, BorderLayout.CENTER);
 
         showWelcomeDialog();
@@ -38,9 +30,10 @@ public class MainUI extends JFrame implements IconSupplier {
     }
 
     private void showWelcomeDialog() {
-        while (db.isClosed())
+        while (db.isClosed()) {
             showDialog(() -> welcomePanel.showDialog(MainUI.this),
                        Option.SIGNIN, this::signIn, Option.SIGNUP, this::signUp);
+        }
     }
 
     private void signIn() {
@@ -67,19 +60,14 @@ public class MainUI extends JFrame implements IconSupplier {
     }
 
     private void configureJMenuBar() {
-        var JMenuBar = new JMenuBar();
-        populateJMenuBar(JMenuBar);
-        setJMenuBar(JMenuBar);
-    }
-
-    private void populateJMenuBar(JMenuBar menuBar) {
+        var menuBar = new JMenuBar();
         var signOut = Utils.makeJMenuItem("登出账户", e -> showSignOutDialog());
         var account = Utils.makeJMenu("账户", signOut);
-        var print = Utils.makeJMenuItem("电子版打印", e -> dataDisplayPanel.print());
-        var statistics = Utils.makeJMenu("数据统计", print);
-        importData = Utils.makeJMenuItem("数据导入", e -> showDataImportDialog());
-        var functions = Utils.makeJMenu("功能", statistics, importData);
+        var printer = Utils.makeJMenuItem("数据打印", e -> dataDisplayPanel.print());
+        var importer = Utils.makeJMenuItem("数据导入", e -> showDataImportDialog());
+        var functions = Utils.makeJMenu("功能", printer, importer);
         Utils.addAll(menuBar, account, functions);
+        setJMenuBar(menuBar);
     }
 
     private void showSignOutDialog() {
@@ -119,9 +107,12 @@ public class MainUI extends JFrame implements IconSupplier {
     }
 
     private void initializeConfiguration() {
-        importData.setEnabled(db.hasPrivilegeOfImportingData());
         configureDataDisplayPanel();
-        configureDataImportPanelIfNeeded();
+        var canImportData = db.hasPrivilegeOfImportingData();
+        getJMenuBar().getMenu(1).getItem(1).setEnabled(canImportData);
+        if (canImportData && dataImportPanel.notInitiated()) {
+            initDataImportPanel();
+        }
         setTitle("当前登录用户：" + welcomePanel.getSignInUser().account);
         setVisible(true);
         pack();
@@ -133,24 +124,21 @@ public class MainUI extends JFrame implements IconSupplier {
         dataDisplayPanel.configureQueryAction(this::fireQueryAction);
     }
 
-    private void configureDataImportPanelIfNeeded() {
-        if (importData.isEnabled()) {
-            dataImportPanel.resetAfterReEnter();
-            var tableNames = db.getTableNames();
-            tableNames.remove("user");
-            dataImportPanel.populateTableNameComboBox(tableNames);
-        }
+    private void initDataImportPanel() {
+        var tableNames = db.getTableNames();
+        //TODO how to deal with user?
+        tableNames.remove("user");
+        dataImportPanel.populateTableNameComboBox(tableNames);
     }
 
     private void afterSelection(FilterWrapper<String> mainFilter) {
-        var filterMap = db.getFilterMap(mainFilter);
-        dataDisplayPanel.configureFilters(filterMap);
+        dataDisplayPanel.configureFilters(db.getFilterMap(mainFilter));
         pack();
     }
 
     private void fireQueryAction(FilterWrapper<String> mainFilter) {
-        var filter = dataDisplayPanel.getSelectedFilter();
-        dataDisplayPanel.display(db.queryWithFilter(mainFilter, filter)
+        var selections = dataDisplayPanel.getSelectedFilter();
+        dataDisplayPanel.display(db.queryWithFilter(mainFilter, selections)
                                    .orElse(new DefaultTableModel()));
     }
 

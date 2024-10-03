@@ -8,35 +8,30 @@ import ui.util.Utils;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowListener;
-import java.util.function.Predicate;
 
 public abstract class DialogWrapper extends JPanel {
-    private WindowListener windowListener;
     private JDialog dialog;
-    private Image icon;
     private Option option;
 
     public DialogWrapper() {
         setLayout(new BorderLayout());
     }
 
-    public DialogWrapper(@NotNull WindowListener l) {
-        this();
-        windowListener = l;
-    }
-
     public void setOption(@NotNull Option o) {
         option = o;
     }
+
     public void setDialogIconImage(@Nullable Image icon) {
-        this.icon = icon;
+        dialog.setIconImage(icon);
     }
 
     public abstract @NotNull Option showDialog(Component parent);
 
     protected @NotNull Option showDialog(Component parent, JButton defaultButton, String title) {
         reset();
-        initiateDialogIf(parent, defaultButton, this::needInitiate);
+        if (needInitiate(ancestorOf(parent))) {
+            initiateDialog(ancestorOf(parent), defaultButton);
+        }
         Utils.centerWindow(dialog);
         dialog.setTitle(title);
         dialog.setVisible(true);
@@ -45,17 +40,11 @@ public abstract class DialogWrapper extends JPanel {
 
     protected abstract void reset();
 
-    private void initiateDialogIf(Component parent, JButton defaultButton,
-                                  @NotNull Predicate<Frame> predicate) {
-        Frame owner = ancestorOf(parent);
-        if (predicate.test(owner)) {
-            dialog = new JDialog(owner, true);
-            dialog.add(this);
-            if (windowListener != null) dialog.addWindowListener(windowListener);
-            dialog.getRootPane().setDefaultButton(defaultButton);
-            if (icon != null) dialog.setIconImage(icon);
-            dialog.pack();
-        }
+    protected void initiateDialog(Component parent, JButton defaultButton) {
+        dialog = new JDialog(ancestorOf(parent), true);
+        dialog.add(this);
+        dialog.getRootPane().setDefaultButton(defaultButton);
+        dialog.pack();
     }
     private @NotNull Frame ancestorOf(@NotNull Component parent) {
         return parent instanceof Frame ? (Frame) parent :
@@ -67,5 +56,9 @@ public abstract class DialogWrapper extends JPanel {
 
     public void closeDialog() {
         dialog.setVisible(false);
+    }
+
+    public void addWindowListener(WindowListener l) {
+        dialog.addWindowListener(l);
     }
 }

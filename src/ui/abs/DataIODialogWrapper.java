@@ -12,11 +12,10 @@ import java.awt.*;
 
 public abstract class DataIODialogWrapper extends DialogWrapper
         implements MetadataSupplier<String>, IColumnConstants {
-    private final DataIOPanel dataIOPanel;
+    private final DataIOPanel dataIOPanel = new DataIOPanel(this);
     private final JButton okButton;
 
     public DataIODialogWrapper() {
-        dataIOPanel = new DataIOPanel(this);
         okButton = Utils.makeJButton("确认", e -> onOkOperation());
         var cancelButton = Utils.makeJButton("取消", e -> onCancelOperation());
         var buttonPanel = new JPanel();
