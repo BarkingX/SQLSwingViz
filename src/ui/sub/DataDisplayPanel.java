@@ -21,7 +21,7 @@ public class DataDisplayPanel extends JPanel {
     private final LinkedList<ComboBoxFilter<String>> comboBoxFilters = new LinkedList<>();
     private final JPanel filterPanel = new JPanel(new GridLayout());
     private final JTable dataTable = new JTable();
-    private final JLabel count = new JLabel("0 条记录");;
+    private final JLabel count = new JLabel("0 条记录");
     private ComboBoxFilter<String> mainFilter;
 
     public DataDisplayPanel() {
@@ -55,7 +55,7 @@ public class DataDisplayPanel extends JPanel {
     }
 
     public void configureQueryAction(@NotNull final Consumer<FilterWrapper<String>> fireQuery) {
-        filterPanel.add(Utils.makeJButton("查询",  e -> fireQuery.accept(mainFilter)));
+        filterPanel.add(Utils.makeJButton("查询", () -> fireQuery.accept(mainFilter)));
     }
 
     public void display(@NotNull TableModel tableModel) {

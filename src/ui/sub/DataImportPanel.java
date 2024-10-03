@@ -22,8 +22,8 @@ public class DataImportPanel extends DialogWrapper {
         setLayout(new FlowLayout());
         fileChooser.setFileFilter(new FileNameExtensionFilter("逗号分隔符文件", "csv"));
 
-        submitBtn = Utils.makeJButton("确认提交", e -> processSubmission());
-        var chooseFileBtn = Utils.makeJButton("选择本地文件", e -> showOpenFileDialog());
+        submitBtn = Utils.makeJButton("确认提交", this::processSubmission);
+        var chooseFileBtn = Utils.makeJButton("选择本地文件", this::showOpenFileDialog);
         Utils.addAll(this, tableNamesBox, chooseFileBtn, submitBtn);
     }
 
@@ -62,9 +62,5 @@ public class DataImportPanel extends DialogWrapper {
 
     public boolean notInitiated() {
         return tableNamesBox.getItemCount() == 0;
-    }
-
-    public void resetAfterReEnter() {
-        tableNamesBox.removeAllItems();
     }
 }

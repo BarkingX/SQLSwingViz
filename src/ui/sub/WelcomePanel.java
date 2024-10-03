@@ -21,8 +21,8 @@ public class WelcomePanel extends DialogWrapper {
     public WelcomePanel() {
         var greetingPanel = new JPanel();
         var buttonPanel = new JPanel(new GridLayout(2, 1));
-        var signUpButton = Utils.makeJButton("注册", e -> showSignDialog(Option.SIGNUP));
-        signInButton = Utils.makeJButton("登录", e -> showSignDialog(Option.SIGNIN));
+        var signUpButton = Utils.makeJButton("注册", () -> showSignDialog(Option.SIGNUP));
+        signInButton = Utils.makeJButton("登录", () -> showSignDialog(Option.SIGNIN));
 
         greetingPanel.setBackground(Color.CYAN);
         greetingPanel.add(new JLabel("Welcome"));

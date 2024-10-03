@@ -16,8 +16,8 @@ public abstract class DataIODialogWrapper extends DialogWrapper
     private final JButton okButton;
 
     public DataIODialogWrapper() {
-        okButton = Utils.makeJButton("确认", e -> onOkOperation());
-        var cancelButton = Utils.makeJButton("取消", e -> onCancelOperation());
+        okButton = Utils.makeJButton("确认", this::onOkOperation);
+        var cancelButton = Utils.makeJButton("取消", this::onCancelOperation);
         var buttonPanel = new JPanel();
         Utils.addAll(buttonPanel, okButton, cancelButton);
 

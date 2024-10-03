@@ -14,7 +14,7 @@ import static database.Query.*;
 import static util.FilterType.*;
 
 
-public class Database implements IDatabase, AutoCloseable {
+public class Database implements IDatabase {
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/port";
     private final UnassignedFilterMap<String> filterMap = new UnassignedFilterMap<>();
     private final Connection root;
@@ -67,6 +67,7 @@ public class Database implements IDatabase, AutoCloseable {
             return tableNames;
         }
         catch (SQLException e) {
+            e.printStackTrace();
             return Collections.emptyList();
         }
     }

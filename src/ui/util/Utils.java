@@ -9,12 +9,12 @@ import util.Option;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
@@ -35,21 +35,21 @@ public class Utils {
         for (var component : components) container.add(component);
     }
 
-    public static @NotNull JButton makeJButton(String text, ActionListener l) {
+    public static @NotNull JButton makeJButton(String text, @NotNull Runnable action) {
         var button = new JButton(text);
-        button.addActionListener(l);
+        button.addActionListener(e -> action.run());
         return button;
     }
 
-    public static @NotNull JMenuItem makeJMenuItem(String text, ActionListener listener) {
+    public static @NotNull JMenuItem makeJMenuItem(String text, @NotNull Runnable action) {
         var menuItem = new JMenuItem(text);
-        menuItem.addActionListener(listener);
+        menuItem.addActionListener(e -> action.run());
         return menuItem;
     }
 
     public static @NotNull JMenu makeJMenu(String text, JMenuItem @NotNull ... items) {
         var menu = new JMenu(text);
-        for (var item : items) menu.add(item);
+        Arrays.stream(items).forEach(menu::add);
         return menu;
     }
 
