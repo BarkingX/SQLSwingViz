@@ -25,12 +25,14 @@ public abstract class DialogWrapper extends JPanel {
         dialog.setIconImage(icon);
     }
 
+    public abstract JButton getDefaultButton();
+
     public abstract @NotNull Option showDialog(Component parent);
 
-    protected @NotNull Option showDialog(Component parent, JButton defaultButton, String title) {
+    protected @NotNull Option showDialog(Component parent, String title) {
         reset();
         if (needInitiate(ancestorOf(parent))) {
-            initiateDialog(ancestorOf(parent), defaultButton);
+            initiateDialog(ancestorOf(parent));
         }
         Utils.centerWindow(dialog);
         dialog.setTitle(title);
@@ -40,10 +42,10 @@ public abstract class DialogWrapper extends JPanel {
 
     protected abstract void reset();
 
-    protected void initiateDialog(Component parent, JButton defaultButton) {
+    protected void initiateDialog(Component parent) {
         dialog = new JDialog(ancestorOf(parent), true);
         dialog.add(this);
-        dialog.getRootPane().setDefaultButton(defaultButton);
+        dialog.getRootPane().setDefaultButton(getDefaultButton());
         dialog.pack();
     }
     private @NotNull Frame ancestorOf(@NotNull Component parent) {

@@ -8,44 +8,37 @@ import util.MetadataSupplier;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class DataIOPanel extends JPanel implements MetadataSupplier<String> {
     private final Metadata<String> metadata;
-    private final FieldMetadata fields;
-    private final GridBagConstraints gbc;
+    private final FieldMetadata fields = new FieldMetadata();
+    private final GridBagConstraints gbc = new GBC(0, 0, 1, 1);
 
-    public DataIOPanel(MetadataSupplier<String> metadataSupplier) {
-        setLayout(new GridBagLayout());
-
+    public DataIOPanel(@NotNull MetadataSupplier<String> metadataSupplier) {
         metadata = metadataSupplier.getMetadata();
-        fields = new FieldMetadata();
-        gbc = new GBC(0, 0, 1, 1);
-
+        setLayout(new GridBagLayout());
         populate();
     }
 
     public void populate() {
-        final int columnCount = metadata.getColumnCount();
-        for (int i = 1; i <= columnCount; i++) {
-            var columnName = metadata.getColumnLabel(i);
-            var columnWidth = metadata.getColumnDisplaySize(i);
-            var label = new JLabel(columnName);
-            var field = new JTextField(columnWidth);
+        Consumer<JLabel> addJLabel = label -> {
+            gbc.gridx = 0;
+            gbc.anchor = GridBagConstraints.EAST;
+            add(label, gbc);
+        };
+        BiConsumer<JLabel, JTextField> addLabeledTextField = (label, textField) -> {
+            gbc.gridy++;
+            addJLabel.accept(label);
+            addTextField(textField);
+        };
+
+        for (int i = 1; i <= metadata.getColumnCount(); i++) {
+            var field = new JTextField(metadata.getColumnDisplaySize(i));
             fields.add(field);
-            addLabeledTextField(label, field);
+            addLabeledTextField.accept(new JLabel(metadata.getColumnLabel(i)), field);
         }
-    }
-
-    public void addLabeledTextField(JLabel label, JTextField textField) {
-        gbc.gridy++;
-        addJLabel(label);
-        addTextField(textField);
-    }
-
-    private void addJLabel(JLabel label) {
-        gbc.gridx = 0;
-        gbc.anchor = GridBagConstraints.EAST;
-        add(label, gbc);
     }
 
     private void addTextField(JTextField textField) {

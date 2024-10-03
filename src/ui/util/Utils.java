@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class Utils {
@@ -31,35 +32,60 @@ public class Utils {
         window.setLocation(x, y);
     }
 
-    public static void addAll(JComponent container, JComponent @NotNull ... components) {
-        for (var component : components) container.add(component);
+    public static JComponent addAll(@NotNull JComponent container,
+                                    @NotNull JComponent... components) {
+        Arrays.stream(components).forEach(container::add);
+        return container;
     }
 
-    public static @NotNull JButton makeJButton(String text, @NotNull Runnable action) {
-        var button = new JButton(text);
-        button.addActionListener(e -> action.run());
-        return button;
+    private static @NotNull JComponent make(Class<? extends JComponent> clazz, String text,
+                                           @NotNull Consumer<JComponent> after) {
+        try {
+            JComponent component;
+            if (AbstractButton.class.isAssignableFrom(clazz)) {
+                component = clazz.getDeclaredConstructor(String.class).newInstance(text);
+            }
+            else {
+                component = clazz.getDeclaredConstructor().newInstance();
+            }
+            after.accept(component);
+            return component;
+        }
+        catch (Exception e) {
+            throw new IllegalArgumentException("Failed to create an instance of: " + clazz.getName(), e);
+        }
     }
 
-    public static @NotNull JMenuItem makeJMenuItem(String text, @NotNull Runnable action) {
-        var menuItem = new JMenuItem(text);
-        menuItem.addActionListener(e -> action.run());
-        return menuItem;
+    public static @NotNull JPanel makeJPanel(JComponent @NotNull ... items) {
+        return (JPanel) make(JPanel.class, null, c -> addAll(c, items));
     }
 
     public static @NotNull JMenu makeJMenu(String text, JMenuItem @NotNull ... items) {
-        var menu = new JMenu(text);
-        Arrays.stream(items).forEach(menu::add);
-        return menu;
+        return (JMenu) make(JMenu.class, text, c -> addAll(c, items));
     }
 
-    public static void showDialog(@NotNull Supplier<Option> showDialog,
-                                   Option success, @Nullable Runnable afterSuccess,
-                                   Option failed, @Nullable Runnable afterFailed) {
-        if (showDialog.get() == success && afterSuccess != null) {
+    @SuppressWarnings("unchecked")
+    public static <T extends AbstractButton> @NotNull T makeButton(Class<T> clazz, String text,
+                                                                   @NotNull Runnable action) {
+        return (T) make(clazz, text, c -> ((AbstractButton) c).addActionListener(e -> action.run()));
+    }
+
+    public static @NotNull JMenuItem makeJMenuItem(String text, @NotNull Runnable action) {
+        return makeButton(JMenuItem.class, text, action);
+    }
+
+    public static @NotNull JButton makeJButton(String text, @NotNull Runnable action) {
+        return makeButton(JButton.class, text, action);
+    }
+
+    public static void showDialog(@NotNull Supplier<Option> optionSupplier,
+                                  Option success, @Nullable Runnable afterSuccess,
+                                  Option failed, @Nullable Runnable afterFailed) {
+        var option = optionSupplier.get();
+        if (option == success && afterSuccess != null) {
             afterSuccess.run();
         }
-        else if (showDialog.get() == failed && afterFailed != null) {
+        else if (option == failed && afterFailed != null) {
             afterFailed.run();
         }
     }

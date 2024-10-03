@@ -18,27 +18,17 @@ public abstract class DataIODialogWrapper extends DialogWrapper
     public DataIODialogWrapper() {
         okButton = Utils.makeJButton("确认", this::onOkOperation);
         var cancelButton = Utils.makeJButton("取消", this::onCancelOperation);
-        var buttonPanel = new JPanel();
-        Utils.addAll(buttonPanel, okButton, cancelButton);
 
+        dataIOPanel.replaceWithPasswordField(PASSWORD_COLUMN);
         add(dataIOPanel, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
+        add(Utils.makeJPanel(okButton, cancelButton), BorderLayout.SOUTH);
     }
 
-    public void onOkOperation() {
-        setOption(checkIntegrity() ? Option.OK : Option.ERROR);
-        closeDialog();
-    }
-
-    public abstract boolean checkIntegrity();
+    public abstract void onOkOperation();
 
     public void onCancelOperation() {
         setOption(Option.CANCEL);
         closeDialog();
-    }
-
-    public void replaceWithPasswordField(int column) {
-        dataIOPanel.replaceWithPasswordField(column);
     }
 
     public abstract String getTitle();
@@ -58,8 +48,13 @@ public abstract class DataIODialogWrapper extends DialogWrapper
     }
 
     @Override
+    public JButton getDefaultButton() {
+        return okButton;
+    }
+
+    @Override
     public @NotNull Option showDialog(@NotNull Component parent) {
-        return showDialog(parent, okButton, getTitle());
+        return showDialog(parent, getTitle());
     }
 
     @Override

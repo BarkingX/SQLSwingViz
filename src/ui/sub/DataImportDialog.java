@@ -12,13 +12,13 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Objects;
 
-public class DataImportPanel extends DialogWrapper {
+public class DataImportDialog extends DialogWrapper {
     private final JComboBox<String> tableNamesBox = new JComboBox<>();
     private final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
     private final JButton submitBtn;
     private int result;
 
-    public DataImportPanel() {
+    public DataImportDialog() {
         setLayout(new FlowLayout());
         fileChooser.setFileFilter(new FileNameExtensionFilter("逗号分隔符文件", "csv"));
 
@@ -32,9 +32,8 @@ public class DataImportPanel extends DialogWrapper {
     }
 
     private void processSubmission() {
-        var option = result == JFileChooser.APPROVE_OPTION && fileChooser.getSelectedFile() != null ? Option.OK : Option.ERROR;
-        setOption(option);
-        closeDialog();
+        setOption(result == JFileChooser.APPROVE_OPTION && fileChooser.getSelectedFile() != null
+                  ? Option.OK : Option.ERROR);
     }
 
     public void populateTableNameComboBox(@NotNull Collection<String> tableNames) {
@@ -50,8 +49,13 @@ public class DataImportPanel extends DialogWrapper {
     }
 
     @Override
+    public JButton getDefaultButton() {
+        return submitBtn;
+    }
+
+    @Override
     public @NotNull Option showDialog(@NotNull Component parent) {
-        return showDialog(parent, submitBtn, "数据录入");
+        return showDialog(parent, "数据录入");
     }
 
     @Override

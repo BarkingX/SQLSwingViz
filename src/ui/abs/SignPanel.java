@@ -7,17 +7,12 @@ import util.Option;
 import util.StrMetadata;
 import util.User;
 
-import javax.swing.*;
 import java.awt.*;
 
 public abstract class SignPanel extends DataIODialogWrapper {
-    public SignPanel() {
-        replaceWithPasswordField(PASSWORD_COLUMN);
-    }
-
     @Override
     public void onOkOperation() {
-        if (checkIntegrity()) {
+        if (allHaveText(ACCOUNT_COLUMN, PASSWORD_COLUMN)) {
             setOption(Option.OK);
             closeDialog();
         }
@@ -27,14 +22,9 @@ public abstract class SignPanel extends DataIODialogWrapper {
     }
 
     @Override
-    protected void initiateDialog(Component parent, JButton defaultButton) {
-        super.initiateDialog(parent, defaultButton);
+    protected void initiateDialog(Component parent) {
+        super.initiateDialog(parent);
         setDialogIconImage(Utils.getIcon(IconType.GENERAL));
-    }
-
-    @Override
-    public boolean checkIntegrity() {
-        return allHaveText(ACCOUNT_COLUMN, PASSWORD_COLUMN);
     }
 
     @Override

@@ -28,11 +28,9 @@ public class DataDisplayPanel extends JPanel {
         setLayout(new BorderLayout());
 
         var tablePane = new JScrollPane(dataTable);
-        var statusPanel = new JPanel();
         tablePane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        statusPanel.add(count);
         add(tablePane, BorderLayout.CENTER);
-        add(statusPanel, BorderLayout.SOUTH);
+        add(Utils.makeJPanel(count), BorderLayout.SOUTH);
         add(filterPanel, BorderLayout.NORTH);
     }
 
@@ -50,7 +48,7 @@ public class DataDisplayPanel extends JPanel {
     }
 
     public void configureFilters(@NotNull UnassignedFilterMap<String> unassignedFilterMap) {
-        unassignedFilterMap.forEach((type, values) -> comboBoxFilters.add(new ComboBoxFilter<>(type, values)));
+        unassignedFilterMap.forEach((t, v) -> comboBoxFilters.add(new ComboBoxFilter<>(t, v)));
         comboBoxFilters.forEach(filterPanel::add);
     }
 

@@ -11,34 +11,38 @@ import javax.swing.*;
 import java.awt.*;
 
 
-public class WelcomePanel extends DialogWrapper {
+public class WelcomeDialog extends DialogWrapper {
     private static final int DEFAULT_WIDTH = 300;
     private static final int DEFAULT_HEIGHT = 200;
     private final SignInPanel signInPanel = new SignInPanel();
     private final SignUpPanel signUpPanel = new SignUpPanel();
     private final JButton signInButton;
 
-    public WelcomePanel() {
-        var greetingPanel = new JPanel();
-        var buttonPanel = new JPanel(new GridLayout(2, 1));
+    public WelcomeDialog() {
         var signUpButton = Utils.makeJButton("注册", () -> showSignDialog(Option.SIGNUP));
         signInButton = Utils.makeJButton("登录", () -> showSignDialog(Option.SIGNIN));
 
+        var buttonPanel = Utils.makeJPanel(signInButton, signUpButton);
+        var greetingPanel = Utils.makeJPanel(new JLabel("Welcome"));
+        buttonPanel.setLayout(new GridLayout(2, 1));
         greetingPanel.setBackground(Color.CYAN);
-        greetingPanel.add(new JLabel("Welcome"));
-        Utils.addAll(buttonPanel, signInButton, signUpButton);
         add(greetingPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
     @Override
-    public @NotNull Option showDialog(@NotNull Component parent) {
-        return showDialog(parent, signInButton, "欢迎使用本系统");
+    public JButton getDefaultButton() {
+        return signInButton;
     }
 
     @Override
-    protected void initiateDialog(Component parent, JButton defaultButton) {
-        super.initiateDialog(parent, defaultButton);
+    public @NotNull Option showDialog(@NotNull Component parent) {
+        return showDialog(parent, "欢迎使用本系统");
+    }
+
+    @Override
+    protected void initiateDialog(Component parent) {
+        super.initiateDialog(parent);
         setDialogIconImage(Utils.getIcon(IconType.GENERAL));
         addWindowListener(Utils.exitOnClosing(null));
     }
@@ -56,15 +60,15 @@ public class WelcomePanel extends DialogWrapper {
         return signUpPanel.getUser();
     }
 
-    private void showSignDialog(Option approveOption) {
+    private void showSignDialog(@NotNull Option approveOption) {
         closeDialog();
         var signPanel = approveOption == Option.SIGNIN ? signInPanel : signUpPanel;
-        var result = signPanel.showDialog(WelcomePanel.this);
+        var result = signPanel.showDialog(WelcomeDialog.this);
         if (result == Option.OK) {
             setOption(approveOption);
         }
         else {
-            showDialog(WelcomePanel.this);
+            showDialog(WelcomeDialog.this);
         }
     }
 

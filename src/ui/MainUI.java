@@ -18,8 +18,8 @@ public class MainUI extends JFrame {
     private final static int DEFAULT_WIDTH = 1200;
     private final static int DEFAULT_HEIGHT = 800;
     private final IDatabase db;
-    private final WelcomePanel welcomePanel = new WelcomePanel();
-    private final DataImportPanel dataImportPanel = new DataImportPanel();
+    private final WelcomeDialog welcomeDialog = new WelcomeDialog();
+    private final DataImportDialog dataImportDialog = new DataImportDialog();
     private final DataDisplayPanel dataDisplayPanel = new DataDisplayPanel();
 
     public MainUI(@NotNull IDatabase db) {
@@ -34,14 +34,14 @@ public class MainUI extends JFrame {
 
     private void showWelcomeDialogWhile(@NotNull BooleanSupplier condition) {
         while (condition.getAsBoolean()) {
-            showDialog(() -> welcomePanel.showDialog(MainUI.this),
+            showDialog(() -> welcomeDialog.showDialog(MainUI.this),
                        Option.SIGNIN, this::signIn, Option.SIGNUP, this::signUp);
         }
     }
 
     private void signIn() {
         try {
-            db.authenticate(welcomePanel.getSignInUser());
+            db.authenticate(welcomeDialog.getSignInUser());
         }
         catch (RuntimeException e) {
             showErrorDialog("账号或密码错误，请检查后重新输入！").run();
@@ -54,7 +54,7 @@ public class MainUI extends JFrame {
 
     private void signUp() {
         try {
-            db.register(welcomePanel.getSingUpUser());
+            db.register(welcomeDialog.getSingUpUser());
             JOptionPane.showMessageDialog(MainUI.this, "账号注册成功");
         }
         catch (Exception e) {
@@ -63,14 +63,12 @@ public class MainUI extends JFrame {
     }
 
     private void configureJMenuBar() {
-        var menuBar = new JMenuBar();
         var signOut = Utils.makeJMenuItem("登出账户", this::showSignOutDialog);
         var account = Utils.makeJMenu("账户", signOut);
         var printer = Utils.makeJMenuItem("数据打印", dataDisplayPanel::print);
         var importer = Utils.makeJMenuItem("数据导入", this::showDataImportDialog);
         var functions = Utils.makeJMenu("功能", printer, importer);
-        Utils.addAll(menuBar, account, functions);
-        setJMenuBar(menuBar);
+        setJMenuBar((JMenuBar) Utils.addAll(new JMenuBar(), account, functions));
     }
 
     private void showSignOutDialog() {
@@ -85,7 +83,7 @@ public class MainUI extends JFrame {
         };
 
         showDialog(() -> Utils.showConfirmDialog(MainUI.this, "请确认是否要退出登录", "退出登录",
-                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE),
+                          JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE),
                 Option.OK, signOutAndReEnterWelcomePage,
                 Option.CANCEL, null);
     }
@@ -93,8 +91,8 @@ public class MainUI extends JFrame {
     private void showDataImportDialog() {
         Runnable loadData = () -> {
             try {
-                db.loadDataInfile(dataImportPanel.getSelectedFile().getPath(),
-                                  dataImportPanel.getSelectedTableName());
+                db.loadDataInfile(dataImportDialog.getSelectedFile().getPath(),
+                                  dataImportDialog.getSelectedTableName());
                 JOptionPane.showMessageDialog(MainUI.this, "数据导入成功");
             }
             catch (RuntimeException e) {
@@ -102,7 +100,7 @@ public class MainUI extends JFrame {
             }
         };
 
-        showDialog(() -> dataImportPanel.showDialog(MainUI.this),
+        showDialog(() -> dataImportDialog.showDialog(MainUI.this),
                 Option.OK, loadData,
                 Option.ERROR, showErrorDialog("请选择需要导入的文件"));
     }
@@ -110,7 +108,7 @@ public class MainUI extends JFrame {
     private void initializeConfiguration() {
         configDataDisplayPanel();
         configDataImporting();
-        setTitle("当前登录用户：" + welcomePanel.getSignInUser().account);
+        setTitle("当前登录用户：" + welcomeDialog.getSignInUser().account);
         setVisible(true);
         pack();
     }
@@ -135,10 +133,10 @@ public class MainUI extends JFrame {
     private void configDataImporting() {
         var importer = getJMenuBar().getMenu(1).getItem(1);
         importer.setEnabled(db.hasPrivilegeOfImportingData());
-        if (importer.isEnabled() && dataImportPanel.notInitiated()) {
+        if (importer.isEnabled() && dataImportDialog.notInitiated()) {
             var tableNames = db.getTableNames();
             tableNames.remove("user");
-            dataImportPanel.populateTableNameComboBox(tableNames);
+            dataImportDialog.populateTableNameComboBox(tableNames);
         }
     }
 

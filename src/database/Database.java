@@ -27,17 +27,14 @@ public class Database implements IDatabase {
     }
 
     private void populateFilterMap() {
-        final var yearFilter = new LinkedHashSet<>(Set.of("2021", "2020", "2019", "2018", "2017", "2016"));
-        yearFilter.add(null);
-        loadFilter(YEAR, () -> yearFilter);
-        loadFilter(CITY_NAME, () -> selectAndReturnCollection(root, SELECT_CITY_NAME));
-        loadFilter(PORT_CODE, () -> selectAndReturnCollection(root, SELECT_PORT_CODE));
-        loadFilter(SEA_NAME, () -> selectAndReturnCollection(root, SELECT_SEA_NAME));
+        loadFilter(YEAR, new ArrayList<>(List.of("2021", "2020", "2019", "2018", "2017", "2016")));
+        loadFilter(CITY_NAME, selectAndReturnCollection(root, SELECT_CITY_NAME));
+        loadFilter(PORT_CODE, selectAndReturnCollection(root, SELECT_PORT_CODE));
+        loadFilter(SEA_NAME, selectAndReturnCollection(root, SELECT_SEA_NAME));
     }
 
     private void loadFilter(FilterType filterType,
-                            @NotNull Supplier<Collection<String>> filterSupplier) {
-        var filter = filterSupplier.get();
+                            @NotNull Collection<String> filter) {
         filter.add(null);
         filterMap.put(filterType, new LinkedHashSet<>(filter));
     }
