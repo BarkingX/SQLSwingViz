@@ -1,5 +1,7 @@
 package util;
 
+import lombok.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,7 +9,7 @@ import java.util.List;
 public class StrMetadata extends ArrayList<String> implements Metadata<String> {
     private static final int WIDTH = 10;
 
-    public StrMetadata(String... columns) {
+    public StrMetadata(@NonNull String... columns) {
         addAll(List.of(columns));
     }
 

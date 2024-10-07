@@ -1,13 +1,15 @@
 package database;
 
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import util.*;
 
 import javax.sql.rowset.RowSetProvider;
 import javax.swing.table.TableModel;
 import java.sql.*;
 import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static database.Query.*;
 import static util.FilterType.*;
@@ -15,7 +17,7 @@ import static util.FilterType.*;
 
 public class Database implements IDatabase {
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/port";
-    private final UnassignedFilterMap<String> filterMap = new UnassignedFilterMap<>();
+    private final UnassignedFilterMap<String> metaFilters = new UnassignedFilterMap<>();
     private final Connection root;
     private PreparedStatement stat;
     private Connection user;
@@ -32,10 +34,10 @@ public class Database implements IDatabase {
         loadFilter(SEA_NAME, selectAndReturnCollection(root, SELECT_SEA_NAME));
     }
 
-    private void loadFilter(FilterType filterType,
+    private void loadFilter(@NonNull FilterType filterType,
                             @NonNull Collection<String> filter) {
         filter.add(null);
-        filterMap.put(filterType, new LinkedHashSet<>(filter));
+        metaFilters.put(filterType, new LinkedHashSet<>(filter));
     }
 
     private @NonNull Collection<String> selectAndReturnCollection(Connection conn, String query) {
@@ -69,14 +71,10 @@ public class Database implements IDatabase {
         }
     }
 
+    @SneakyThrows
     @Override
     public void authenticate(@NonNull User user) {
-        try {
-            this.user = DriverManager.getConnection(URL, user.account, user.password);
-        }
-        catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        this.user = DriverManager.getConnection(URL, user.account, user.password);
     }
 
     private @NonNull Role selectRole() {
@@ -103,9 +101,8 @@ public class Database implements IDatabase {
                          @NonNull List<String> parameters) throws SQLException {
         stat = conn.prepareStatement(query);
         for (int i = 0; i < parameters.size(); i++) {
-            var p = parameters.get(i);
-            if (p != null) {
-                stat.setString(i + 1, p);
+            if (parameters.get(i) != null) {
+                stat.setString(i + 1, parameters.get(i));
             }
             else {
                 stat.setNull(i + 1, Types.NULL);
@@ -113,27 +110,19 @@ public class Database implements IDatabase {
         }
     }
 
+    @SneakyThrows
     @Override
     public void disconnect() {
-        try {
+        if (user != null && !user.isClosed()) {
             user.close();
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
         }
     }
 
+    @SneakyThrows
     @Override
     public void close() {
-        try {
-            root.close();
-            if (user != null && !user.isClosed()) {
-                disconnect();
-            }
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-        }
+        root.close();
+        disconnect();
     }
 
     //TODO validate
@@ -177,10 +166,8 @@ public class Database implements IDatabase {
     @Override
     public Optional<TableModel> queryWithFilter(@NonNull FilterWrapper<String> mainFilter,
                                                 @NonNull AssignedFilterMap<String> assignedFilterMap) {
-        var query = configureQuery(QueryType.ofValue(mainFilter.getValue()));
-        var parameters = configureParameters(QueryType.ofValue(mainFilter.getValue()), assignedFilterMap);
-
-        try (var rs = executeQuery(user, query, parameters)) {
+        var queryType = QueryType.of(mainFilter.getValue());
+        try (var rs = executeQuery(user, queryType.sql, assignedFilterMap.gets(queryType.filters))) {
             var crs = RowSetProvider.newFactory().createCachedRowSet();
             crs.populate(rs);
             return Optional.of(new QueryModel(crs));
@@ -190,72 +177,20 @@ public class Database implements IDatabase {
         }
     }
 
-    private @NonNull String configureQuery(QueryType queryType) {
-        return QueryType.RECORD.equals(queryType) ?
-                CALL_SHOW_RECORD : (QueryType.SAMPLE.equals(queryType) ?
-                CALL_SHOW_SAMPLE : (QueryType.PORT.equals(queryType) ?
-                CALL_SHOW_PORT : (QueryType.NO_STATION.equals(queryType) ?
-                CALL_SHOW_NO_STATION : (QueryType.SAMPLE_STATISTICS.equals(queryType) ?
-                CALL_SHOW_SAMPLE_STATISTICS : CALL_SHOW_ANNUAL_REPORT))));
-    }
-    private @NonNull List<String> configureParameters(QueryType queryType,
-                                                      @NonNull AssignedFilterMap<String> filterMap) {
-        var parameters = new ArrayList<String>();
-
-        if (QueryType.RECORD.equals(queryType)
-                || QueryType.SAMPLE.equals(queryType)
-                || QueryType.PORT.equals(queryType)) {
-            var city = filterMap.get(CITY_NAME);
-            var sea = filterMap.get(SEA_NAME);
-            parameters.addAll(Arrays.asList(city, filterMap.get(PORT_CODE), sea));
-        }
-        else if (QueryType.SAMPLE_STATISTICS.equals(queryType)) {
-            parameters.add(filterMap.get(PORT_CODE));
-        }
-        else if (QueryType.ANNUAL_REPORT.equals(queryType)){
-            parameters.addAll(Arrays.asList(filterMap.get(PORT_CODE), filterMap.get(YEAR)));
-        }
-        return parameters;
-    }
-
     @Override
     public @NonNull UnassignedFilterMap<String> getQueryTypeFilterMap() {
-        var role = selectRole();
-        var queryType = new LinkedHashSet<>(Set.of(QueryType.RECORD.value, QueryType.SAMPLE.value));
-        if (role.equals(Role.ADMIN)) {
-            queryType.add(QueryType.PORT.value);
-        }
-        else if (role.equals(Role.OFFICIAL)) {
-            queryType.addAll(Set.of(QueryType.NO_STATION.value, QueryType.SAMPLE_STATISTICS.value,
-                    QueryType.ANNUAL_REPORT.value));
-        }
-        return new UnassignedFilterMap<>(QUERY_TYPE, queryType);
+        return new UnassignedFilterMap<>(QUERY_TYPE,
+                selectRole().getAuthorizedQueries().stream()
+                            .map(QueryType::getValue)
+                            .collect(Collectors.toUnmodifiableSet()));
     }
 
     @Override
-    public @NonNull UnassignedFilterMap<String> getFilterMap(@NonNull FilterWrapper<String> mainFilter) {
-        var filterMap = new UnassignedFilterMap<String>();
-        var queryType = QueryType.ofValue(mainFilter.getValue());
-        if (QueryType.RECORD.equals(queryType)
-                || QueryType.SAMPLE.equals(queryType)
-                || QueryType.PORT.equals(queryType)) {
-            loadFilter(CITY_NAME, filterMap::put);
-            loadFilter(PORT_CODE, filterMap::put);
-            loadFilter(SEA_NAME, filterMap::put);
-        }
-        else if (QueryType.SAMPLE_STATISTICS.equals(queryType)){
-            loadFilter(PORT_CODE, filterMap::put);
-        }
-        else if (QueryType.ANNUAL_REPORT.equals(queryType)) {
-            loadFilter(PORT_CODE, filterMap::put);
-            loadFilter(YEAR, filterMap::put);
-        }
-        return filterMap;
-    }
-
-    private void loadFilter(@NonNull FilterType filterType,
-                            @NonNull BiConsumer<FilterType, Set<String>> mapLoader) {
-        mapLoader.accept(filterType, filterMap.get(filterType));
+    public @NonNull UnassignedFilterMap<String> getFilterMap(@NonNull String target) {
+        return new UnassignedFilterMap<>(
+                QueryType.of(target)
+                         .filters.stream()
+                         .collect(Collectors.toMap(Function.identity(), metaFilters::get)));
     }
 
     @Override
@@ -272,29 +207,5 @@ public class Database implements IDatabase {
     public boolean hasPrivilegeOfImportingData() {
         var role = selectRole();
         return role.equals(Role.ROOT) || role.equals(Role.ADMIN);
-    }
-
-    private enum Role {
-        ADMIN, OFFICIAL, USER, ROOT, UNKNOWN
-    }
-
-    private enum QueryType {
-        RECORD("水域环境信息"), SAMPLE("水质信息"), PORT("港口信息"),
-        NO_STATION("没有监测点的港口"), SAMPLE_STATISTICS("年平均水质"),
-        ANNUAL_REPORT("年度数据报告");
-        private final String value;
-
-        QueryType(String value) {
-            this.value = value;
-        }
-
-        public static @NonNull QueryType ofValue(String value) {
-            return RECORD.value.equals(value) ?
-                    RECORD : (SAMPLE.value.equals(value) ?
-                    SAMPLE : (PORT.value.equals(value) ?
-                    PORT : (NO_STATION.value.equals(value) ?
-                    NO_STATION : (SAMPLE_STATISTICS.value.equals(value) ?
-                    SAMPLE_STATISTICS : ANNUAL_REPORT))));
-        }
     }
 }

@@ -1,6 +1,7 @@
 package util;
 
 import lombok.NonNull;
+import lombok.SneakyThrows;
 
 import javax.sql.rowset.CachedRowSet;
 import javax.swing.table.AbstractTableModel;
@@ -21,36 +22,23 @@ public class QueryModel extends AbstractTableModel {
         return cachedRowSet.size();
     }
 
+    @SneakyThrows
     @Override
     public int getColumnCount() {
-        try {
-            return metaData.getColumnCount();
-        }
-        catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return metaData.getColumnCount();
     }
 
+    @SneakyThrows
     @Override
     public Object getValueAt(int row, int column) {
-        try {
-            cachedRowSet.absolute(row + 1);
-            return cachedRowSet.getObject(column + 1);
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
+        cachedRowSet.absolute(row + 1);
+        return cachedRowSet.getObject(column + 1);
     }
 
+    @SneakyThrows
     @Override
     public String getColumnName(int column) {
-        try {
-            return metaData.getColumnName(column + 1);
-        }
-        catch (SQLException e) {
-            return "column";
-        }
+        return metaData.getColumnName(column + 1);
     }
 
     @Override

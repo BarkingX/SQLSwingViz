@@ -2,10 +2,7 @@ package ui.abs;
 
 import lombok.NonNull;
 import ui.util.Utils;
-import util.IconType;
-import util.Option;
-import util.StrMetadata;
-import util.User;
+import util.*;
 
 import java.awt.*;
 
@@ -28,7 +25,7 @@ public abstract class SignPanel extends DataIODialogWrapper {
     }
 
     @Override
-    public @NonNull StrMetadata getMetadata() {
+    public @NonNull Metadata<String> getMetadata() {
         return User.METADATA;
     }
 

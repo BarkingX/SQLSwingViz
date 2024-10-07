@@ -19,8 +19,8 @@ public class WelcomeDialog extends DialogWrapper {
     private final JButton signInButton;
 
     public WelcomeDialog() {
-        var signUpButton = Utils.makeJButton("注册", this::showSignUpDialog);
-        signInButton = Utils.makeJButton("登录", this::showSignInDialog);
+        var signUpButton = Utils.makeJButton("注册", () -> showSignDialog(Option.SIGNUP));
+        signInButton = Utils.makeJButton("登录", () -> showSignDialog(Option.SIGNIN));
 
         var buttonPanel = Utils.makeJPanel(signInButton, signUpButton);
         var greetingPanel = Utils.makeJPanel(new JLabel("Welcome"));
@@ -28,14 +28,6 @@ public class WelcomeDialog extends DialogWrapper {
         greetingPanel.setBackground(Color.CYAN);
         add(greetingPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
-    }
-
-    private void showSignInDialog() {
-        showSignDialog(Option.SIGNIN);
-    }
-
-    private void showSignUpDialog() {
-        showSignDialog(Option.SIGNUP);
     }
 
     private void showSignDialog(@NonNull Option approveOption) {

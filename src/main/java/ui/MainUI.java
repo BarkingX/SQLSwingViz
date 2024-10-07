@@ -114,7 +114,7 @@ public class MainUI extends JFrame {
 
     private void configDataDisplayPanel() {
         Consumer<FilterWrapper<String>> afterSelection = filter -> {
-            dataDisplayPanel.configureFilters(db.getFilterMap(filter));
+            dataDisplayPanel.configureFilters(db.getFilterMap(filter.getValue()));
             pack();
         };
 

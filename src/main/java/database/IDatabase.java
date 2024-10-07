@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface IDatabase {
     @NonNull Collection<String> getTableNames();
     @NonNull UnassignedFilterMap<String> getQueryTypeFilterMap();
-    @NonNull UnassignedFilterMap<String> getFilterMap(FilterWrapper<String> mainFilter);
+    @NonNull UnassignedFilterMap<String> getFilterMap(@NonNull String mainFilter);
     void authenticate(User user);
     void disconnect();
     void close();
