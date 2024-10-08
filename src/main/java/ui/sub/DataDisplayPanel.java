@@ -17,6 +17,8 @@ import java.awt.print.PrinterException;
 import java.util.LinkedList;
 import java.util.function.Consumer;
 
+import static ui.util.Utils.showErrorDialog;
+
 public class DataDisplayPanel extends JPanel {
     private static final byte MAX_SIZEABLE_COL = 10;
     private final LinkedList<ComboBoxFilter<String>> comboBoxFilters = new LinkedList<>();
@@ -71,7 +73,7 @@ public class DataDisplayPanel extends JPanel {
             dataTable.print(JTable.PrintMode.FIT_WIDTH);
         }
         catch (PrinterException e) {
-            e.printStackTrace();
+            showErrorDialog(this, e.getMessage(), "打印失败");
         }
     }
 

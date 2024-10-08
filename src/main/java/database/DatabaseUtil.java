@@ -14,7 +14,7 @@ public class DatabaseUtil {
 
     @SneakyThrows
     static @NonNull Collection<String> selectAndReturnCollection(@NonNull Connection conn,
-                                                                  @NonNull String query) {
+                                                                 @NonNull String query) {
         return column(conn.createStatement().executeQuery(query), 1);
     }
 
@@ -27,7 +27,6 @@ public class DatabaseUtil {
             return result;
         }
         catch (SQLException e) {
-            e.printStackTrace();
             return Collections.emptyList();
         }
     }
@@ -43,7 +42,6 @@ public class DatabaseUtil {
                               @NonNull List<String> parameters) throws SQLException {
         return prepared(conn, query, parameters).executeUpdate();
     }
-
 
     static @NonNull PreparedStatement prepared(@NonNull Connection conn, String query,
                                                @NonNull List<String> parameters) throws SQLException {
