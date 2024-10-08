@@ -9,6 +9,7 @@ import util.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.Collections;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -30,7 +31,7 @@ public class MainUI extends JFrame {
         setIconImage(Utils.getIcon(IconType.GENERAL));
         add(dataDisplayPanel, BorderLayout.CENTER);
 
-        showWelcomeDialogWhile(db::isClosed);
+        showWelcomeDialogWhile(db::isDisconnected);
         configureJMenuBar();
         initializeConfiguration();
     }
@@ -77,7 +78,7 @@ public class MainUI extends JFrame {
         Runnable signOutAndReEnterWelcomePage = () -> {
             db.disconnect();
             setVisible(false);
-            showWelcomeDialogWhile(db::isClosed);
+            showWelcomeDialogWhile(db::isDisconnected);
             initializeConfiguration();
         };
 
@@ -134,7 +135,7 @@ public class MainUI extends JFrame {
         importer.setEnabled(db.hasPrivilegeOfImportingData());
         if (importer.isEnabled() && dataImportDialog.notInitiated()) {
             var tableNames = db.getTableNames();
-            tableNames.remove("user");
+//            tableNames.remove("user");
             dataImportDialog.populateTableNameComboBox(tableNames);
         }
     }

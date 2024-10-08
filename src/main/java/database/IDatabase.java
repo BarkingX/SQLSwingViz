@@ -18,6 +18,6 @@ public interface IDatabase {
     void loadDataInfile(String path, String tableName);
     Optional<TableModel> queryWithFilter(FilterWrapper<String> mainFilter,
                                          AssignedFilterMap<String> assignedFilterMap);
-    boolean isClosed();
+    boolean isDisconnected();
     boolean hasPrivilegeOfImportingData();
 }

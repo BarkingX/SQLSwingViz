@@ -11,19 +11,22 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.google.common.collect.ImmutableMap.ofEntries;
+import static com.google.common.collect.Maps.immutableEnumMap;
+import static java.util.Map.entry;
+import static util.IconType.*;
+
 public class Utils {
-    @Getter(lazy = true) private static final Map<IconType, Image> icons = loadIcons();
+    @Getter(lazy = true) private static final Map<IconType, ? extends Image> icons = loadIcons();
     private Utils() {}
 
     public static void centerWindow(@NonNull Window window) {
@@ -101,25 +104,21 @@ public class Utils {
         JOptionPane.showMessageDialog(parent, message, title, JOptionPane.ERROR_MESSAGE);
     }
 
-    public static @NonNull Map<IconType, Image> loadIcons() {
+    public static @NonNull Map<IconType, ? extends Image> loadIcons() {
         try {
-            var path = "src/main/resources/image/%1$s";
-            Function<String, File> locate = uri -> Paths.get(String.format(path, uri)).toFile();
-            var general = ImageIO.read(locate.apply("administrator.jpg"));
-            var user = ImageIO.read(locate.apply("user.jpg"));
-            var official = ImageIO.read(locate.apply("official.jpg"));
-            var administrator = ImageIO.read(locate.apply("administrator.jpg"));
-
-            var logos = new EnumMap<IconType, Image>(IconType.class);
-            logos.put(IconType.GENERAL, general);
-            logos.put(IconType.USER, user);
-            logos.put(IconType.OFFICIAL, official);
-            logos.put(IconType.ADMINISTRATOR, administrator);
-            return logos;
+            return immutableEnumMap(ofEntries(entry(GENERAL, readImage("general.jpg")),
+                                              entry(USER, readImage("user.jpg")),
+                                              entry(OFFICIAL, readImage("official.jpg")),
+                                              entry(ADMINISTRATOR, readImage("administrator.jpg"))));
         }
-        catch (IOException e) {
+        catch (Exception e) {
             return Collections.emptyMap();
         }
+    }
+
+    static @NonNull Image readImage(@NonNull String name) throws IOException {
+        var path = "src/main/resources/image/%1$s";
+        return Optional.ofNullable(ImageIO.read(Paths.get(String.format(path, name)).toFile())).orElseThrow();
     }
 
     public static @NonNull WindowListener exitOnClosing(Runnable action) {

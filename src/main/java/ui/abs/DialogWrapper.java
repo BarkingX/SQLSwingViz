@@ -9,6 +9,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowListener;
 
+import static javax.swing.SwingUtilities.getAncestorOfClass;
+
 public abstract class DialogWrapper extends JPanel {
     private JDialog dialog;
     @Setter private Option option;
@@ -44,8 +46,7 @@ public abstract class DialogWrapper extends JPanel {
     protected abstract void reset();
 
     private @NonNull Frame ancestorOf(@NonNull Component parent) {
-        return parent instanceof Frame ? (Frame) parent :
-                (Frame) SwingUtilities.getAncestorOfClass(Frame.class, parent);
+        return parent instanceof Frame ? (Frame) parent : (Frame) getAncestorOfClass(Frame.class, parent);
     }
 
     protected void initiateDialog(Component parent) {

@@ -16,12 +16,15 @@ public enum Role {
     OFFICIAL(queriesOf(RECORD, SAMPLE, NO_STATION, SAMPLE_STATISTICS, ANNUAL_REPORT)),
     USER(queriesOf(RECORD, SAMPLE)),
     //TODO add ROOT queries
-    ROOT(queriesOf(RECORD, SAMPLE)),
-    UNKNOWN(Set.of());
+    NONE(queriesOf(RECORD, SAMPLE));
 
     private final Set<QueryType> authorizedQueries;
 
     private static @NonNull Set<QueryType> queriesOf(@NonNull QueryType... queries) {
         return new LinkedHashSet<>(Set.of(queries));
+    }
+
+    public static @NonNull Role of(@NonNull String name) {
+        return Role.valueOf(name.toUpperCase());
     }
 }

@@ -3,7 +3,6 @@ package ui.abs;
 import lombok.NonNull;
 import ui.sub.DataIOPanel;
 import ui.util.IColumnConstants;
-import ui.util.Utils;
 import util.MetadataSupplier;
 import util.Option;
 

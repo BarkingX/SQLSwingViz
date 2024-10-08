@@ -1,5 +1,8 @@
 package database;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Sets;
+import lombok.Cleanup;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import util.*;
@@ -11,6 +14,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.google.common.collect.FluentIterable.from;
+import static database.DatabaseUtil.*;
 import static database.Query.*;
 import static util.FilterType.*;
 
@@ -19,7 +24,6 @@ public class Database implements IDatabase {
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/port";
     private final UnassignedFilterMap<String> metaFilters = new UnassignedFilterMap<>();
     private final Connection root;
-    private PreparedStatement stat;
     private Connection user;
 
     public Database() throws SQLException {
@@ -28,7 +32,7 @@ public class Database implements IDatabase {
     }
 
     private void populateFilterMap() {
-        loadFilter(YEAR, new ArrayList<>(List.of("2021", "2020", "2019", "2018", "2017", "2016")));
+        loadFilter(YEAR, Set.of("2021", "2020", "2019", "2018", "2017", "2016"));
         loadFilter(CITY_NAME, selectAndReturnCollection(root, SELECT_CITY_NAME));
         loadFilter(PORT_CODE, selectAndReturnCollection(root, SELECT_PORT_CODE));
         loadFilter(SEA_NAME, selectAndReturnCollection(root, SELECT_SEA_NAME));
@@ -36,39 +40,21 @@ public class Database implements IDatabase {
 
     private void loadFilter(@NonNull FilterType filterType,
                             @NonNull Collection<String> filter) {
-        filter.add(null);
-        metaFilters.put(filterType, new LinkedHashSet<>(filter));
+        metaFilters.put(filterType, new LinkedHashSet<>(Sets.union(Set.of(""), Set.copyOf(filter))));
     }
 
-    private @NonNull Collection<String> selectAndReturnCollection(Connection conn, String query) {
-        try (var stat = conn.createStatement();
-             var rs = stat.executeQuery(query)) {
-            var result = new ArrayList<String>();
-            while (rs.next()) {
-                result.add(rs.getString(1));
-            }
-            return result;
-        }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return Collections.emptyList();
-        }
-    }
-
+    @SneakyThrows
     @Override
     public @NonNull Collection<String> getTableNames() {
-        try (var rs = root.getMetaData().getTables("port", null,
-                null, new String[] { "TABLE" })) {
-            var tableNames = new LinkedList<String>();
-            while (rs.next()) {
-                tableNames.add(rs.getString(3));
-            }
-            return tableNames;
+        var result = column(root.getMetaData().getTables("port", null, null, new String[] { "TABLE" }),
+                3);
+
+        if (!selectRole().equals(Role.NONE)) {
+            result.remove("user");
         }
-        catch (SQLException e) {
-            e.printStackTrace();
-            return Collections.emptyList();
-        }
+        return result;
+//        return column(root.getMetaData().getTables("port", null, null, new String[] { "TABLE" }),
+//                3);
     }
 
     @SneakyThrows
@@ -77,43 +63,19 @@ public class Database implements IDatabase {
         this.user = DriverManager.getConnection(URL, user.account, user.password);
     }
 
+    @SneakyThrows
     private @NonNull Role selectRole() {
-        try (var rs = executeQuery(this.user, SELECT_ROLE, Collections.emptyList())) {
-            return rs.next() ? Role.valueOf(rs.getString(1).split("`")[1].toUpperCase())
-                             : Role.ROOT;
-        }
-        catch (SQLException | IllegalArgumentException e) {
-            return Role.UNKNOWN;
-        }
-    }
-
-    private ResultSet executeQuery(Connection conn, String query, List<String> parameters) throws SQLException {
-        execute(conn, query, parameters);
-        return stat.getResultSet();
-    }
-
-    private void execute(Connection conn, String query, List<String> parameters) throws SQLException {
-        prepare(conn, query, parameters);
-        stat.execute();
-    }
-
-    private void prepare(@NonNull Connection conn, String query,
-                         @NonNull List<String> parameters) throws SQLException {
-        stat = conn.prepareStatement(query);
-        for (int i = 0; i < parameters.size(); i++) {
-            if (parameters.get(i) != null) {
-                stat.setString(i + 1, parameters.get(i));
-            }
-            else {
-                stat.setNull(i + 1, Types.NULL);
-            }
-        }
+        @Cleanup
+        var rs = executeQuery(this.user, SELECT_ROLE, Collections.emptyList());
+        rs.next();
+        return Role.of(from(Splitter.on("`").omitEmptyStrings().split(rs.getString(1)))
+                       .first().or(Role.USER.name()));
     }
 
     @SneakyThrows
     @Override
     public void disconnect() {
-        if (user != null && !user.isClosed()) {
+        if (!isDisconnected()) {
             user.close();
         }
     }
@@ -137,7 +99,6 @@ public class Database implements IDatabase {
         }
         catch (SQLException e) {
             root.rollback();
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
         finally {
@@ -145,20 +106,12 @@ public class Database implements IDatabase {
         }
     }
 
-    private void executeUpdate(Connection conn, String query, List<String> parameters) throws SQLException {
-        execute(conn, query, parameters);
-        stat.getUpdateCount();
-    }
-
     @Override
     public void loadDataInfile(@NonNull String path, String tableName) {
         try {
-            var filePath = '\'' + path.replaceAll("\\\\", "/") + '\'';
-            var query = LOAD_DATA_INFILE.replaceFirst("\\?", filePath).replace("?", tableName);
-            executeUpdate(root, query, Collections.emptyList());
+            executeUpdate(root, String.format(LOAD_DATA_INFILE, tableName), List.of(path));
         }
         catch (SQLException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -194,7 +147,7 @@ public class Database implements IDatabase {
     }
 
     @Override
-    public boolean isClosed() {
+    public boolean isDisconnected() {
         try {
             return user == null || user.isClosed();
         }
@@ -205,7 +158,6 @@ public class Database implements IDatabase {
 
     @Override
     public boolean hasPrivilegeOfImportingData() {
-        var role = selectRole();
-        return role.equals(Role.ROOT) || role.equals(Role.ADMIN);
+        return selectRole().equals(Role.ADMIN);
     }
 }

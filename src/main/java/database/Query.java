@@ -2,7 +2,7 @@ package database;
 
 
 public interface Query {
-    String LOAD_DATA_INFILE = "LOAD DATA INFILE ? INTO TABLE ?"
+    String LOAD_DATA_INFILE = "LOAD DATA INFILE ? INTO TABLE `%s`"
             + " FIELDS TERMINATED BY ',' IGNORE 1 LINES";
     String CREATE_USER = "CREATE USER ? IDENTIFIED BY ? DEFAULT ROLE user";
     String INSERT_USER = "INSERT INTO user(account, password) values(?, ?)";
