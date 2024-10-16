@@ -7,7 +7,6 @@ import javax.sql.rowset.CachedRowSet;
 import javax.swing.table.AbstractTableModel;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Time;
 import java.time.LocalTime;
 
 public class QueryModel extends AbstractTableModel {

@@ -2,7 +2,6 @@ package ui.abs;
 
 import lombok.NonNull;
 import model.User;
-import org.checkerframework.checker.units.qual.A;
 import ui.util.IconType;
 import ui.util.Option;
 import ui.util.UiUtil;

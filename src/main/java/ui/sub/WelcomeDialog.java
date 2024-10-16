@@ -1,8 +1,6 @@
 package ui.sub;
 
 import lombok.NonNull;
-import org.jdesktop.swingx.JXLabel;
-import org.jdesktop.swingx.painter.MattePainter;
 import ui.abs.DialogWrapper;
 import ui.util.UiUtil;
 import ui.util.IconType;
