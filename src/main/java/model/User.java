@@ -1,9 +1,10 @@
-package util;
+package model;
 
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-
-import java.util.List;
+import util.Metadata;
+import util.MetadataSupplier;
+import util.StrMetadata;
 
 @AllArgsConstructor
 public class User implements MetadataSupplier<String> {
@@ -14,9 +15,5 @@ public class User implements MetadataSupplier<String> {
     @Override
     public @NonNull Metadata<String> getMetadata() {
         return METADATA;
-    }
-
-    public @NonNull List<String> toList() {
-        return List.of(account, password);
     }
 }

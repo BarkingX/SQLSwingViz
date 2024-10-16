@@ -2,8 +2,7 @@ package ui.util;
 
 import lombok.Getter;
 import lombok.NonNull;
-import util.IconType;
-import util.Option;
+import org.jdesktop.swingx.JXPanel;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -23,11 +22,11 @@ import java.util.function.Supplier;
 import static com.google.common.collect.ImmutableMap.ofEntries;
 import static com.google.common.collect.Maps.immutableEnumMap;
 import static java.util.Map.entry;
-import static util.IconType.*;
+import static ui.util.IconType.*;
 
-public class Utils {
+public class UiUtil {
     @Getter(lazy = true) private static final Map<IconType, ? extends Image> icons = loadIcons();
-    private Utils() {}
+    private UiUtil() {}
 
     public static void centerWindow(@NonNull Window window) {
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
@@ -60,8 +59,8 @@ public class Utils {
         }
     }
 
-    public static @NonNull JPanel makeJPanel(JComponent @NonNull ... items) {
-        return (JPanel) make(JPanel.class, "", c -> addAll(c, items));
+    public static @NonNull JXPanel makeJXPanel(JComponent @NonNull ... items) {
+        return (JXPanel) make(JXPanel.class, "", c -> addAll(c, items));
     }
 
     public static @NonNull JMenu makeJMenu(String text, JMenuItem @NonNull ... items) {

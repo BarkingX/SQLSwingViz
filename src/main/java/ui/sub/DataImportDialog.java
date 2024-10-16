@@ -2,8 +2,8 @@ package ui.sub;
 
 import lombok.NonNull;
 import ui.abs.DialogWrapper;
-import ui.util.Utils;
-import util.Option;
+import ui.util.UiUtil;
+import ui.util.Option;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -22,9 +22,9 @@ public class DataImportDialog extends DialogWrapper {
         setLayout(new FlowLayout());
         fileChooser.setFileFilter(new FileNameExtensionFilter("逗号分隔符文件", "csv"));
 
-        submitBtn = Utils.makeJButton("确认提交", this::processSubmission);
-        var chooseFileBtn = Utils.makeJButton("选择本地文件", this::showOpenFileDialog);
-        Utils.addAll(this, tableNamesBox, chooseFileBtn, submitBtn);
+        submitBtn = UiUtil.makeJButton("确认提交", this::processSubmission);
+        var chooseFileBtn = UiUtil.makeJButton("选择本地文件", this::showOpenFileDialog);
+        UiUtil.addAll(this, tableNamesBox, chooseFileBtn, submitBtn);
     }
 
     private void processSubmission() {

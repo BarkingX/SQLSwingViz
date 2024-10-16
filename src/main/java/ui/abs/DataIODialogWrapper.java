@@ -4,14 +4,14 @@ import lombok.NonNull;
 import ui.sub.DataIOPanel;
 import ui.util.IColumnConstants;
 import util.MetadataSupplier;
-import util.Option;
+import ui.util.Option;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.stream.IntStream;
 
-import static ui.util.Utils.makeJButton;
-import static ui.util.Utils.makeJPanel;
+import static ui.util.UiUtil.makeJButton;
+import static ui.util.UiUtil.makeJXPanel;
 
 public abstract class DataIODialogWrapper extends DialogWrapper
         implements MetadataSupplier<String>, IColumnConstants {
@@ -23,7 +23,7 @@ public abstract class DataIODialogWrapper extends DialogWrapper
 
         dataIOPanel.replaceWithPasswordField(PASSWORD_COLUMN);
         add(dataIOPanel, BorderLayout.CENTER);
-        add(makeJPanel(okButton, makeJButton("取消", this::onCancelOperation)),
+        add(makeJXPanel(okButton, makeJButton("取消", this::onCancelOperation)),
             BorderLayout.SOUTH);
     }
 

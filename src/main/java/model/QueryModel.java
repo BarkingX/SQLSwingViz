@@ -1,4 +1,4 @@
-package util;
+package model;
 
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -7,6 +7,8 @@ import javax.sql.rowset.CachedRowSet;
 import javax.swing.table.AbstractTableModel;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.time.LocalTime;
 
 public class QueryModel extends AbstractTableModel {
     private final CachedRowSet cachedRowSet;
@@ -15,6 +17,11 @@ public class QueryModel extends AbstractTableModel {
     public QueryModel(@NonNull CachedRowSet crs) throws SQLException {
         cachedRowSet = crs;
         metaData = crs.getMetaData();
+    }
+
+    @SneakyThrows
+    public @NonNull String getTableName() {
+        return cachedRowSet.getTableName();
     }
 
     @Override
@@ -45,7 +52,7 @@ public class QueryModel extends AbstractTableModel {
     public Class<?> getColumnClass(int column) {
         try {
             var className = metaData.getColumnClassName(column + 1);
-            return "java.sql.Time".equals(className) ? String.class : Class.forName(className);
+            return "java.sql.Time".equals(className) ? LocalTime.class : Class.forName(className);
         }
         catch (SQLException | ClassNotFoundException e) {
             return String.class;

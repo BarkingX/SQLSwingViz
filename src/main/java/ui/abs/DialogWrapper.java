@@ -2,8 +2,9 @@ package ui.abs;
 
 import lombok.NonNull;
 import lombok.Setter;
-import util.Option;
-import ui.util.Utils;
+import org.jdesktop.swingx.JXPanel;
+import ui.util.Option;
+import ui.util.UiUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +12,7 @@ import java.awt.event.WindowListener;
 
 import static javax.swing.SwingUtilities.getAncestorOfClass;
 
-public abstract class DialogWrapper extends JPanel {
+public abstract class DialogWrapper extends JXPanel {
     private JDialog dialog;
     @Setter private Option option;
 
@@ -37,7 +38,7 @@ public abstract class DialogWrapper extends JPanel {
         if (notInitiated) {
             initiateDialog(ancestorOf(parent));
         }
-        Utils.centerWindow(dialog);
+        UiUtil.centerWindow(dialog);
         dialog.setTitle(getTitle());
         dialog.setVisible(true);
         return option;

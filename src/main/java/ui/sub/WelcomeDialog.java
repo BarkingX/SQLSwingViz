@@ -1,11 +1,13 @@
 package ui.sub;
 
 import lombok.NonNull;
+import org.jdesktop.swingx.JXLabel;
+import org.jdesktop.swingx.painter.MattePainter;
 import ui.abs.DialogWrapper;
-import ui.util.Utils;
-import util.IconType;
-import util.Option;
-import util.User;
+import ui.util.UiUtil;
+import ui.util.IconType;
+import ui.util.Option;
+import model.User;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,11 +21,11 @@ public class WelcomeDialog extends DialogWrapper {
     private final JButton signInButton;
 
     public WelcomeDialog() {
-        var signUpButton = Utils.makeJButton("注册", () -> showSignDialog(Option.SIGNUP));
-        signInButton = Utils.makeJButton("登录", () -> showSignDialog(Option.SIGNIN));
+        var signUpButton = UiUtil.makeJButton("注册", () -> showSignDialog(Option.SIGNUP));
+        signInButton = UiUtil.makeJButton("登录", () -> showSignDialog(Option.SIGNIN));
 
-        var buttonPanel = Utils.makeJPanel(signInButton, signUpButton);
-        var greetingPanel = Utils.makeJPanel(new JLabel("Welcome"));
+        var buttonPanel = UiUtil.makeJXPanel(signInButton, signUpButton);
+        var greetingPanel = UiUtil.makeJXPanel(new JLabel("Welcome"));
         buttonPanel.setLayout(new GridLayout(2, 1));
         greetingPanel.setBackground(Color.CYAN);
         add(greetingPanel, BorderLayout.CENTER);
@@ -62,8 +64,8 @@ public class WelcomeDialog extends DialogWrapper {
     @Override
     protected void initiateDialog(Component parent) {
         super.initiateDialog(parent);
-        setIconImage(Utils.getIcon(IconType.GENERAL));
-        addWindowListener(Utils.exitOnClosing(null));
+        setIconImage(UiUtil.getIcon(IconType.GENERAL));
+        addWindowListener(UiUtil.exitOnClosing(null));
     }
 
     @Override

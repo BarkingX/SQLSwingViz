@@ -1,6 +1,6 @@
 import ui.MainUI;
 import database.Database;
-import ui.util.Utils;
+import ui.util.UiUtil;
 
 import java.awt.*;
 import java.sql.SQLException;
@@ -11,8 +11,8 @@ public class PortAPP {
         final var db = new Database();
         EventQueue.invokeLater(() -> {
             var frame = new MainUI(db);
-            frame.addWindowListener(Utils.exitOnClosing(db::close));
-            Utils.centerWindow(frame);
+            frame.addWindowListener(UiUtil.exitOnClosing(db::close));
+            UiUtil.centerWindow(frame);
         });
     }
 }

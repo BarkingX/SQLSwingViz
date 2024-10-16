@@ -3,7 +3,9 @@ package ui;
 import database.IDatabase;
 import lombok.NonNull;
 import ui.sub.*;
-import ui.util.Utils;
+import ui.util.IconType;
+import ui.util.Option;
+import ui.util.UiUtil;
 import util.*;
 
 import javax.swing.*;
@@ -12,10 +14,10 @@ import java.awt.*;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
-import static ui.util.Utils.addAll;
-import static ui.util.Utils.showDialog;
-import static ui.util.Utils.makeJMenu;
-import static ui.util.Utils.makeJMenuItem;
+import static ui.util.UiUtil.addAll;
+import static ui.util.UiUtil.showDialog;
+import static ui.util.UiUtil.makeJMenu;
+import static ui.util.UiUtil.makeJMenuItem;
 
 public class MainUI extends JFrame {
     private final static int DEFAULT_WIDTH = 1200;
@@ -27,7 +29,7 @@ public class MainUI extends JFrame {
 
     public MainUI(@NonNull IDatabase db) {
         this.db = db;
-        setIconImage(Utils.getIcon(IconType.GENERAL));
+        setIconImage(UiUtil.getIcon(IconType.GENERAL));
         add(dataDisplayPanel, BorderLayout.CENTER);
 
         showWelcomeDialogWhile(db::isDisconnected);
@@ -46,13 +48,13 @@ public class MainUI extends JFrame {
         try {
             db.authenticate(welcomeDialog.getSignInUser());
         }
-        catch (RuntimeException e) {
+        catch (Exception e) {
             showErrorDialog("账号或密码错误，请检查后重新输入！").run();
         }
     }
 
     private @NonNull Runnable showErrorDialog(String message) {
-        return () -> Utils.showErrorDialog(MainUI.this, message, "登录失败");
+        return () -> UiUtil.showErrorDialog(MainUI.this, message, "错误");
     }
 
     private void signUp() {
@@ -81,7 +83,7 @@ public class MainUI extends JFrame {
             initializeConfiguration();
         };
 
-        showDialog(() -> Utils.showConfirmDialog(MainUI.this, "请确认是否要退出登录", "退出登录",
+        showDialog(() -> UiUtil.showConfirmDialog(MainUI.this, "请确认是否要退出登录", "退出登录",
                           JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE),
                 Option.OK, signOutAndReEnterWelcomePage,
                 Option.CANCEL, null);
@@ -95,7 +97,7 @@ public class MainUI extends JFrame {
                 JOptionPane.showMessageDialog(MainUI.this, "数据导入成功");
             }
             catch (RuntimeException e) {
-                Utils.showErrorDialog(MainUI.this, e.getMessage(), "Error!");
+                showErrorDialog(e.getMessage()).run();
             }
         };
 
@@ -120,22 +122,32 @@ public class MainUI extends JFrame {
 
         Consumer<FilterWrapper<String>> fireQuery = filter -> {
             var selections = dataDisplayPanel.getSelectedFilter();
-            dataDisplayPanel.display(db.queryWithFilter(filter, selections)
+            dataDisplayPanel.display(db.queryWithFilter(filter.getValue(), selections)
                                        .orElse(new DefaultTableModel()));
+        };
+
+        Runnable fireDelete = () -> {
+            try {
+                db.deleteFromWheres(dataDisplayPanel.getTableName(), dataDisplayPanel.getSelectedRows());
+                dataDisplayPanel.updateStatus(dataDisplayPanel.getMessageAfterDeletion());
+            }
+            catch (Exception e) {
+                showErrorDialog(e.getMessage()).run();
+                dataDisplayPanel.updateStatus("删除失败: 请检查条件或重试");
+            }
         };
 
         dataDisplayPanel.reset();
         dataDisplayPanel.configureMainFilter(db.getQueryTypeFilterMap(), afterSelection);
         dataDisplayPanel.configureQueryAction(fireQuery);
+        dataDisplayPanel.configureDeleteAction(fireDelete);
     }
 
     private void configDataImporting() {
         var importer = getJMenuBar().getMenu(1).getItem(1);
         importer.setEnabled(db.hasPrivilegeOfImportingData());
         if (importer.isEnabled() && dataImportDialog.notInitiated()) {
-            var tableNames = db.getTableNames();
-//            tableNames.remove("user");
-            dataImportDialog.populateTableNameComboBox(tableNames);
+            dataImportDialog.populateTableNameComboBox(db.getTableNames());
         }
     }
 

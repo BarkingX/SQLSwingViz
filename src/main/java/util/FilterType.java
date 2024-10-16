@@ -7,7 +7,7 @@ import lombok.NonNull;
 
 
 public enum FilterType {
-    QUERY_TYPE, CITY_NAME, PORT_CODE, SEA_NAME, YEAR;
+    QUERY_TYPE, CITY_NAME, PORT_CODE, SEA_NAME, YEAR, TYPE;
 
     public static @NonNull Set<FilterType> basicFilters() {
         return ImmutableSet.of(CITY_NAME, PORT_CODE, SEA_NAME);

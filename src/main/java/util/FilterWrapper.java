@@ -7,4 +7,8 @@ public interface FilterWrapper<V> extends Map.Entry<FilterType, V> {
     default V setValue(V value) {
         throw new UnsupportedOperationException();
     }
+
+    default boolean isEmpty() {
+        return getValue() == null || getValue() == "";
+    }
 }

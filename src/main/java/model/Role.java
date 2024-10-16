@@ -1,8 +1,9 @@
-package util;
+package model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
+import util.QueryType;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
