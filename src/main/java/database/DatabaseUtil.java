@@ -1,19 +1,44 @@
 package database;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 
+import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
+@NoArgsConstructor(access = AccessLevel.NONE)
 public class DatabaseUtil {
-    private DatabaseUtil() {}
+    private static final String CONFIGURATION = "db.properties";
+    private static final Properties properties = new Properties();
+
+    static {
+        try (var f = DatabaseUtil.class.getClassLoader().getResourceAsStream(CONFIGURATION)) {
+            properties.load(Objects.requireNonNull(f, "Unable to find " + CONFIGURATION));
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static @NonNull Connection getConnection() throws SQLException {
+        return getConnection(properties.getProperty("db.username"),
+                             properties.getProperty("db.password"));
+    }
+
+    static @NonNull Connection getConnection(@NonNull String username, @NonNull String password)
+            throws SQLException {
+        var url = properties.getProperty("db.url");
+        assert !(isNullOrEmpty(url) || isNullOrEmpty(username) || isNullOrEmpty(password));
+        return DriverManager.getConnection(url, username, password);
+    }
 
     @SneakyThrows
     static @NonNull Collection<String> selectAndReturnCollection(@NonNull Connection conn,

@@ -1,48 +1,56 @@
 package database;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
 import lombok.Cleanup;
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import model.*;
-import util.*;
+import model.QueryModel;
+import model.Role;
+import model.User;
+import util.AssignedFilterMap;
+import util.FilterType;
+import util.QueryType;
+import util.UnassignedFilterMap;
 
 import javax.sql.rowset.RowSetProvider;
 import javax.swing.table.TableModel;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.FluentIterable.from;
+import static com.google.common.collect.Sets.union;
 import static database.DatabaseUtil.*;
 import static database.Query.*;
 import static util.FilterType.*;
 
 
 public class Database implements IDatabase {
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/port";
     private final UnassignedFilterMap<String> metaFilters = new UnassignedFilterMap<>();
     private final Connection root;
     private Connection user;
 
     public Database() throws SQLException {
-        root = DriverManager.getConnection(URL, "root", "527310");
+        root = DatabaseUtil.getConnection();
         populateFilterMap();
     }
 
     private void populateFilterMap() {
-        loadFilter(YEAR, pastNYears(10));
-        loadFilter(CITY_NAME, selectAndReturnCollection(root, SELECT_CITY_NAME));
-        loadFilter(PORT_CODE, selectAndReturnCollection(root, SELECT_PORT_CODE));
-        loadFilter(SEA_NAME, selectAndReturnCollection(root, SELECT_SEA));
+        loadFilter(YEAR, pastNYears(10), "");
+        loadFilter(CITY_NAME, selectAndReturnCollection(root, SELECT_CITY_NAME), "");
+        loadFilter(PORT_CODE, selectAndReturnCollection(root, SELECT_PORT_CODE), "");
+        loadFilter(SEA_NAME, selectAndReturnCollection(root, SELECT_SEA), "");
+        loadFilter(TYPE, selectAndReturnCollection(root, SELECT_ROLE), "%");
     }
 
     private void loadFilter(@NonNull FilterType filterType,
-                            @NonNull Collection<String> filter) {
-        metaFilters.put(filterType, new LinkedHashSet<>(Sets.union(Set.of(""), Set.copyOf(filter))));
+                            @NonNull Collection<String> filter,
+                            @NonNull String empty) {
+        metaFilters.put(filterType, new LinkedHashSet<>(union(Set.of(empty), Set.copyOf(filter))));
     }
 
     @Override
@@ -51,16 +59,16 @@ public class Database implements IDatabase {
     }
 
     @Override
-    public void authenticate(@NonNull User user) throws SQLException {
-        this.user = DriverManager.getConnection(URL, user.account, user.password);
+    public @NonNull Role authenticate(@NonNull User user) throws SQLException {
+        this.user = getConnection(user.account, user.password);
+        return selectRole();
     }
 
     @SneakyThrows
     private @NonNull Role selectRole() {
-        @Cleanup var rs = executeQuery(this.user, SELECT_ROLE, Collections.emptyList());
+        @Cleanup var rs = executeQuery(user, CURRENT_ROLE, Collections.emptyList());
         rs.next();
-        return Role.of(from(Splitter.on("`").omitEmptyStrings().split(rs.getString(1)))
-                       .first().or(Role.USER.name()));
+        return Role.of(from(Splitter.on("`").omitEmptyStrings().split(rs.getString(1))).first().or(Role.USER.name()));
     }
 
     @SneakyThrows
@@ -83,8 +91,8 @@ public class Database implements IDatabase {
         boolean autoCommit = root.getAutoCommit();
         try {
             root.setAutoCommit(false);
-            executeUpdate(root, CREATE_USER, List.of(user.account, user.password));
-            executeUpdate(root, INSERT_USER, List.of(user.account, user.password));
+            executeUpdate(root, CREATE_USER, user.infos());
+            executeUpdate(root, INSERT_USER, user.infos());
             root.commit();
         }
         catch (SQLException e) {
@@ -127,17 +135,12 @@ public class Database implements IDatabase {
         if (wheres.isEmpty()) {
             throw new RuntimeException("请选择需要删除的记录");
         }
-
         boolean autoCommit = user.getAutoCommit();
         try {
             user.setAutoCommit(false);
             execute(user, TURN_OFF_SAFE_UPDATES, Collections.emptyList());
             for (var where : wheres) {
-                executeUpdate(user, CALL_DELETE_FROM_WHERES, ImmutableList.<String>builder()
-                        .add(tableName)
-                        .addAll(where.entrySet().stream()
-                                .flatMap(entry -> Stream.of(entry.getKey(), String.valueOf(entry.getValue())))
-                                .iterator()).build());
+                executeUpdate(user, CALL_DELETE_FROM_WHERES, parasForDeleting(tableName, where));
             }
             user.commit();
         }
@@ -149,6 +152,15 @@ public class Database implements IDatabase {
             execute(user, TURN_ON_SAFE_UPDATES, Collections.emptyList());
             user.setAutoCommit(autoCommit);
         }
+    }
+
+    private @NonNull List<String> parasForDeleting(@NonNull String tableName,
+                                                   @NonNull Map<String, Object> where) {
+        return ImmutableList.<String>builder()
+                .add(tableName)
+                .addAll(where.entrySet().stream()
+                        .flatMap(entry -> Stream.of(entry.getKey(), String.valueOf(entry.getValue())))
+                        .iterator()).build();
     }
 
     @Override
@@ -179,7 +191,12 @@ public class Database implements IDatabase {
     }
 
     @Override
-    public boolean hasPrivilegeOfImportingData() {
-        return selectRole().equals(Role.ADMIN);
+    public boolean hasPrivilegeOfImportingData(@NonNull User user) {
+        return Role.ADMIN.equals(Role.of(user.type));
+    }
+
+    @Override
+    public boolean hasPrivilegeOfRegisteringUser(@NonNull User user) {
+        return Role.NONE.equals(Role.of(user.type));
     }
 }

@@ -59,5 +59,5 @@ public abstract class DialogWrapper extends JXPanel {
 
     protected abstract @NonNull JButton getDefaultButton();
 
-    protected abstract @NonNull String getTitle();
+    public abstract @NonNull String getTitle();
 }

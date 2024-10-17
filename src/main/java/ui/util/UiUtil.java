@@ -2,6 +2,7 @@ package ui.util;
 
 import lombok.Getter;
 import lombok.NonNull;
+import model.Role;
 import org.jdesktop.swingx.JXPanel;
 
 import javax.imageio.ImageIO;
@@ -22,10 +23,10 @@ import java.util.function.Supplier;
 import static com.google.common.collect.ImmutableMap.ofEntries;
 import static com.google.common.collect.Maps.immutableEnumMap;
 import static java.util.Map.entry;
-import static ui.util.IconType.*;
+import static model.Role.*;
 
 public class UiUtil {
-    @Getter(lazy = true) private static final Map<IconType, ? extends Image> icons = loadIcons();
+    @Getter(lazy = true) private static final Map<Role, ? extends Image> icons = loadIcons();
     private UiUtil() {}
 
     public static void centerWindow(@NonNull Window window) {
@@ -103,12 +104,12 @@ public class UiUtil {
         JOptionPane.showMessageDialog(parent, message, title, JOptionPane.ERROR_MESSAGE);
     }
 
-    public static @NonNull Map<IconType, ? extends Image> loadIcons() {
+    public static @NonNull Map<Role, ? extends Image> loadIcons() {
         try {
-            return immutableEnumMap(ofEntries(entry(GENERAL, readImage("general.jpg")),
+            return immutableEnumMap(ofEntries(entry(NULL, readImage("general.jpg")),
                                               entry(USER, readImage("user.jpg")),
                                               entry(OFFICIAL, readImage("official.jpg")),
-                                              entry(ADMINISTRATOR, readImage("administrator.jpg"))));
+                                              entry(ADMIN, readImage("administrator.jpg"))));
         }
         catch (Exception e) {
             return Collections.emptyMap();
@@ -132,7 +133,7 @@ public class UiUtil {
         };
     }
 
-    public static @NonNull Image getIcon(@NonNull IconType type) {
-        return getIcons().get(type);
+    public static @NonNull Image getIcon(@NonNull Role role) {
+        return getIcons().get(role);
     }
 }

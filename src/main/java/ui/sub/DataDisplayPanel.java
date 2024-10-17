@@ -3,7 +3,6 @@ package ui.sub;
 import lombok.NonNull;
 import model.QueryModel;
 import org.jdesktop.swingx.JXLabel;
-import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
 import util.FilterWrapper;
@@ -25,9 +24,9 @@ import static com.google.common.collect.ImmutableMap.ofEntries;
 import static java.util.Map.entry;
 import static ui.util.UiUtil.showErrorDialog;
 
-public class DataDisplayPanel extends JXPanel {
+public class DataDisplayPanel extends JPanel {
     private final LinkedList<ComboBoxFilter<String>> comboBoxFilters = new LinkedList<>();
-    private final JXPanel filterPanel = new JXPanel(new GridLayout());
+    private final JPanel filterPanel = new JPanel(new GridLayout());
     private final JXTable dataTable = new JXTable();
     private final JXLabel statusLabel = new JXLabel();
     private ComboBoxFilter<String> mainFilter;
@@ -57,7 +56,6 @@ public class DataDisplayPanel extends JXPanel {
                                     @NonNull Consumer<FilterWrapper<String>> afterSelection) {
         var rawMainFilter = mainFilterMap.entrySet().iterator().next();
         mainFilter = new ComboBoxFilter<>(rawMainFilter.getKey(), rawMainFilter.getValue());
-
         mainFilter.addActionListener(e -> {
             comboBoxFilters.forEach(filterPanel::remove);
             comboBoxFilters.clear();
@@ -82,7 +80,6 @@ public class DataDisplayPanel extends JXPanel {
     public void display(@NonNull TableModel tableModel) {
         dataTable.setModel(tableModel);
         dataTable.doLayout();
-
         String filterStatus = comboBoxFilters.stream().allMatch(FilterWrapper::isEmpty) ? "无筛选条件" : "已应用筛选";
         updateStatus(String.format("%d 条记录 | %s", tableModel.getRowCount(), filterStatus));
     }
@@ -130,5 +127,11 @@ public class DataDisplayPanel extends JXPanel {
         display(new DefaultTableModel());
         filterPanel.removeAll();
         updateStatus("初始状态");
+    }
+
+    public void notifyListeners() {
+        for (var l : mainFilter.getActionListeners()) {
+            l.actionPerformed(null);
+        }
     }
 }

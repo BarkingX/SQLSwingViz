@@ -48,7 +48,8 @@ public class DataImportDialog extends DialogWrapper {
     }
 
     @Override
-    protected @NonNull String getTitle() {
+    @NonNull
+    public String getTitle() {
         return "本地数据导入";
     }
 
@@ -62,9 +63,5 @@ public class DataImportDialog extends DialogWrapper {
 
     public @NonNull File getSelectedFile() {
         return fileChooser.getSelectedFile();
-    }
-
-    public boolean notInitiated() {
-        return tableNamesBox.getItemCount() == 0;
     }
 }

@@ -1,6 +1,8 @@
 package ui.sub;
 
 import lombok.NonNull;
+import model.Role;
+import model.User;
 import ui.abs.SignPanel;
 
 import java.awt.*;
@@ -10,8 +12,20 @@ public class SignInPanel extends SignPanel {
     private static final int DEFAULT_HEIGHT = 180;
 
     @Override
-    protected @NonNull String getTitle() {
+    @NonNull
+    public String getTitle() {
         return "登录";
+    }
+
+    @Override
+    @NonNull
+    public String getErrorMessage() {
+        return super.getErrorMessage() + "\n- 账号或密码错误";
+    }
+
+    @Override
+    public @NonNull User getUser() {
+        return super.getUser().withRole(Role.NULL);
     }
 
     @Override

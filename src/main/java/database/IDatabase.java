@@ -1,8 +1,10 @@
 package database;
 
 import lombok.NonNull;
+import model.Role;
 import model.User;
-import util.*;
+import util.AssignedFilterMap;
+import util.UnassignedFilterMap;
 
 import javax.swing.table.TableModel;
 import java.sql.SQLException;
@@ -14,7 +16,7 @@ public interface IDatabase {
     @NonNull Collection<String> getTableNames();
     @NonNull UnassignedFilterMap<String> getQueryTypeFilterMap();
     @NonNull UnassignedFilterMap<String> getFilterMap(@NonNull String mainFilter);
-    void authenticate(@NonNull User user) throws SQLException;
+    @NonNull Role authenticate(@NonNull User user) throws SQLException;
     void disconnect();
     void close();
     void register(@NonNull User user) throws Exception;
@@ -23,5 +25,6 @@ public interface IDatabase {
                                                   @NonNull AssignedFilterMap<String> assignedFilterMap);
     void deleteFromWheres(@NonNull String tableName, @NonNull Collection<Map<String, Object>> wheres) throws SQLException;
     boolean isDisconnected();
-    boolean hasPrivilegeOfImportingData();
+    boolean hasPrivilegeOfImportingData(@NonNull User user);
+    boolean hasPrivilegeOfRegisteringUser(@NonNull User user);
 }

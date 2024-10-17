@@ -13,10 +13,14 @@ import java.util.Set;
 public class ComboBoxFilter<V> extends JComboBox<V> implements FilterWrapper<V> {
     private final FilterType key;
 
-    @SuppressWarnings("unchecked")
-    public ComboBoxFilter(FilterType key, @NonNull Set<V> values) {
+    public ComboBoxFilter(@NonNull FilterType key, @NonNull V[] values) {
         this.key = key;
-        setModel(new DefaultComboBoxModel<>((V[]) values.toArray()));
+        setModel(new DefaultComboBoxModel<>(values));
+    }
+
+    @SuppressWarnings("unchecked")
+    public ComboBoxFilter(@NonNull FilterType key, @NonNull Set<V> values) {
+        this(key, (V[]) values.toArray());
     }
 
     @Override

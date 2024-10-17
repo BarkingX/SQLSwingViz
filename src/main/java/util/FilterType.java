@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableSet;
 import lombok.NonNull;
 
 
-
 public enum FilterType {
     QUERY_TYPE, CITY_NAME, PORT_CODE, SEA_NAME, YEAR, TYPE;
 
